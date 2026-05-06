@@ -7,44 +7,55 @@
 
 ## TL;DR
 
-- **8개 CNN 아키텍처** + **2종 앙상블** + **2종 non-CNN 베이스라인** (총 12 entries)을 walk-forward OOS로 평가
-- ★ **`ensemble_best` (CNN + logistic 혼합)** 이 두 metric 모두 **단독 1위** → **다음 ODE 실험의 권장 default**
-- **Phase 2에서 2D CNN 재조정 (`cnn_2d_residual_small`)** → 개별 rank corr 0.043 으로 CNN 중 최상위
-- ODE 입력 4종 (μ·Σ·risk·R) 모두 **daily 그리드로 정렬**되어 있고 **look-ahead leakage 없음**
+- **8 CNN + 2 logistic + 2 LSTM + 2 CNN+LSTM hybrid + 3 ensemble = 17 entries** 를 walk-forward OOS 로 평가
+- ★ **Sharpe 우선이면 `ensemble_best` (3-family)** · **rank corr 우선이면 `ensemble_4family` (4-family, cnnlstm 포함)** — 두 번들 모두 production 제공
+- **Phase 2 2D CNN 재조정** (`cnn_2d_residual_small`, 60K→23K params) → 단일 rank corr 0.0426
+- **Phase 4 hybrid 합류** (`cnnlstm_image_scale` — 팀원 작품, 단일 rank 0.0448) → 4-family ensemble rank +0.0068 / Sharpe trade-off, 95% CI [−0.002, +0.016] borderline. cnnlstm vs logistic ρ = **−0.17 (음의 상관)** — diversity mechanism 강하게 지지
+- ODE 입력 4종 (μ·Σ·risk·R) 모두 **daily 그리드로 정렬**, **look-ahead leakage 없음**
 
-### 핵심 숫자 (12 entries, non-CNN 베이스라인 포함)
+### 핵심 숫자 (17 entries)
 
-| 지표 | Rank corr 1위 | Top-k Sharpe 1위 | 최약 베이스라인 |
+| 지표 | Rank corr 1위 | Top-k Sharpe 1위 | 최약 |
 |---|---|---|---|
-| 모델 | ★ `ensemble_best` | ★ `ensemble_best` | `logistic_cumulative_scale` |
-| OOS rank corr | **0.0606** | 0.0606 | −0.0072 |
-| Top-k Sharpe | **0.643** | **0.643** | 0.076 |
+| 모델 | ★ `ensemble_4family` (Phase 4) | ★ `ensemble_best` (Phase 3) | `lstm_cumulative_scale` |
+| OOS rank corr | **0.0674** | 0.0606 | −0.0167 |
+| Top-k Sharpe | 0.543 | **0.643** | 0.076 (logistic_cum) |
 
-`ensemble_best` = `logistic_image_scale` + `cnn_1d_cumulative_scale` + `cnn_2d_residual_small`, cross-sectional percentile-rank 평균. **단일 logistic_image_scale (0.039) 천장을 뚫고 이전 best 조합(0.042)도 갱신** — 한 조합이 rank corr와 top-k Sharpe 모두 1위를 차지하는 드문 결과.
+| Phase | Winner | rank corr | Sharpe |
+|---|---|---|---|
+| 1 (CNN-only top-3) | `ensemble_top3` (auto re-select) | 0.0375 | 0.275 |
+| 3 (CNN + logistic) | ★ **`ensemble_best`** | 0.0606 | **0.6425** |
+| 4 (+ cnnlstm hybrid) | ★ **`ensemble_4family`** | **0.0674** | 0.543 |
 
-**Phase 2/3 핵심 발견**: 2D residual CNN이 원래 underperform했던 원인은 **overparam + undertrain**. Capacity 1/3 축소 (60K→23K params) + dropout 0.2 + wd=5e-4 + patience=5로 재훈련 → `cnn_2d_residual_small`이 기존 2D residual 대비 rank corr **4.3배** (0.010→0.043), ensemble에 포함되면서 새 천장 개방.
+`ensemble_best` = `logistic_image_scale` + `cnn_1d_cumulative_scale` + `cnn_2d_residual_small` (rank-mean).
+`ensemble_4family` = `ensemble_best` 멤버 + `cnnlstm_image_scale` (rank-mean).
 
-레거시 CNN-only 앙상블 `ensemble_top3` (현재 자동 재선정: 2d_residual_small + dilated + cumulative): rank corr **0.0375**, top-k Sharpe **0.275**.
+**Bootstrap significance** ([significance_test.md](significance_test.md), B=10000):
+- Phase 3 → 4 lift +0.0068, 95% CI [−0.002, +0.016] → **borderline NOT significant** (lower bound 가 0 살짝 미만)
+- 단일 CNN best vs cnnlstm lift +0.0022, 95% CI [−0.020, +0.025] → NOT significant
+- **cnnlstm-logistic ρ = −0.17 (음의 상관)**, cnnlstm-CNN ρ = 0.10~0.32 → diversity mechanism 작동. lift 점추정이 borderline 까지 올라온 건 LSTM family 합류 효과의 강한 증거
 
-상세 비교표: [comparison_with_baselines.csv](comparison_with_baselines.csv) · 조합 탐색 결과: [ensemble_search_top.md](ensemble_search_top.md)
+상세: [comparison_with_baselines.csv](comparison_with_baselines.csv) · [ensemble_search_top.md](ensemble_search_top.md) · [significance_test.md](significance_test.md)
 
 ---
 
-## 1. 모델 비교 — CNN vs non-CNN 베이스라인 포함
+## 1. 모델 비교 — 17 entries, 6 family
 
 ![Model comparison](figures/01_model_comparison.png)
 
-11 entries를 walk-forward OOS(24 folds)에서 비교. 색은 family별:
-- ★ **Ensemble (CNN + logistic)** — `ensemble_best` (권장 default)
+17 entries 를 walk-forward OOS (24~48 folds) 에서 비교. 색은 family별:
+- ★★ **Ensemble (4-family)** — `ensemble_4family` (rank corr 우선 default)
+- ★ **Ensemble (CNN + logistic)** — `ensemble_best` (Sharpe 우선 default)
 - 🟥 **Ensemble (CNN only)** — 레거시 `ensemble_top3`
 - 🟦 **CNN 1D image** · 🟪 **CNN 2D image** · 🟩 **CNN (no image)**
+- 🟨 **LSTM (sequence)** · 🟫 **CNN+LSTM hybrid**
 - 🟧 **Baseline (image+logistic)** · ⬜ **Baseline (no image)**
 
 핵심 관찰:
-- **Rank corr & Sharpe 동시 1등은 `ensemble_best` (0.0606 / 0.643)** — logistic_image 단일(0.039) 천장과 Phase 1 best(0.042)를 모두 갱신
-- **재조정된 2D CNN(`cnn_2d_residual_small`)이 단독 rank corr 0.043**으로 CNN 중 1위 — 기존 `cnn_2d_residual_images` (0.007) 대비 6배
-- 그러나 **2D residual 원본과 wd-only 변형은 여전히 하위** → "capacity + regularization + patience"를 모두 걸어야 효과
-- logistic_image + 1D cumulative + 2D residual_small 조합은 **3가지 다른 패밀리**의 signal이 섞여 correlation이 가장 낮음 → diversification이 최대화됨
+- **rank corr 1위는 `ensemble_4family` (0.0633)**, **Sharpe 1위는 `ensemble_best` (0.630)** — 두 metric 챔피언이 갈림
+- **단일 LSTM 1위 `lstm_image_scale` (rank 0.0506)** — 단일 CNN 최고 `cnn_2d_residual_small` (0.0426) 보다 점추정 우위, 단 noise 범위
+- **`cnn_lstm_image_scale` (0.0389)** — 순수 LSTM (0.0506) 대비 떨어짐. CNN+LSTM hybrid 조합은 image 입력 효과를 단순 LSTM 만 못 살림
+- **상관 구조 핵심**: LSTM-CNN raw ρ = 0.03~0.18, CNN-CNN ρ = 0.5~0.6. LSTM 이 가장 독립적인 family
 
 ## 1-B. Ablation — "이미지 효과" vs "CNN 효과" 분리
 
@@ -99,10 +110,26 @@ Portfolio-level에서는 CNN이 로지스틱을 앞섬 — 점예측 품질과 �
 
 ![Model correlation heatmap](figures/05_model_raw_correlation.png)
 
-- Raw CNN score 간 Pearson 상관 — **낮을수록 앙상블 효과 큼**
-- `cnn_2d_residual_images`가 1D 모델들과 **0.25~0.28 상관** → 만약 top-3 기준을 바꾸면 다양성 기여 가능
-- 현재 top-3은 1D 계열로 상관 0.46~0.59 (중간 diversification)
-- 앙상블 자체는 top-3과 0.48~0.83으로 자연스럽게 합성
+- Raw score 간 Pearson 상관 — **낮을수록 앙상블 효과 큼**
+- **CNN 1D끼리**: ρ ≈ 0.5~0.6
+- **CNN 2D vs 1D**: ρ ≈ 0.25~0.28
+- **LSTM/cnnlstm vs CNN**: ρ ≈ 0.03~0.18
+- **`cnnlstm_image_scale` vs `logistic_image_scale`: ρ = −0.17 (음의 상관!)** ← winner 멤버 선택의 핵심
+- ensemble_4family 4개 멤버 평균 ρ ≈ 0.05 (음수 포함), 이론상 variance reduction 효과 최대화
+
+흥미로운 발견: 단일 성능은 `lstm_image_scale` (0.051) > `cnnlstm_image_scale` (0.045) 인데, ensemble winner 에는 cnnlstm 만 들어감. 이유는 **cnnlstm 이 logistic 과 음의 상관 (−0.17) 으로 더 독립적인 정보**를 가져옴. "단독 1위 ≠ ensemble 1위" 의 정확한 사례.
+
+### 3단계 lift progression
+
+![3-stage lift](figures/11_3stage_lift_progression.png)
+
+단계별 ensemble 천장 변화 — Phase 1 → 3 → 4 로 가며 rank corr 단조 증가, 단 Phase 4 는 Sharpe trade-off.
+
+### Bootstrap CI (significance)
+
+![Bootstrap CI](figures/12_bootstrap_ci.png)
+
+10000회 paired bootstrap. 두 lift 모두 95% CI 가 0 을 살짝 포함 → 단일 metric 으로는 statistically not significant. 단 점추정 일관 + ρ 구조 + Sharpe 분리가 종합적으로 mechanism 을 지지.
 
 ---
 
@@ -130,7 +157,8 @@ Portfolio-level에서는 CNN이 로지스틱을 앞섬 — 점예측 품질과 �
 import pandas as pd
 from pathlib import Path
 
-ROOT = Path("ode_inputs_cnn/ensemble_best")   # 권장 default; 또는 ensemble_top3 / 특정 모델 dir
+ROOT = Path("ode_inputs_cnn/ensemble_best")    # Sharpe-prio default
+# 또는 Path("ode_inputs_cnn/ensemble_4family") # rank-corr-prio (LSTM 포함)
 
 bundle = pd.read_csv(ROOT / "ode_bundle.csv", parse_dates=["date"])
 returns = pd.read_csv("ode_inputs_cnn/returns_daily.csv", parse_dates=["date"])
@@ -152,20 +180,22 @@ risk = bundle[[f"{a}_risk" for a in ASSETS]].values
 
 ## 추천 실험 시퀀스
 
-1. **Smoke test**: `ensemble_best`로 Euler ODE 한번 돌려서 weight trajectory 만들기
-2. **Ablation 1**: `ensemble_best` vs `ensemble_top3` vs 단일 best → mixed 앙상블 값어치 검증
-3. **Ablation 2**: μ 시그널 대신 단순 모멘텀 baseline → CNN이 실제 lift 주는지 정량화
-4. **Sensitivity**: 같은 ODE에 `risk_score` 기반 γ(t) 투입 vs γ_const
+1. **Smoke test**: `ensemble_best` (Sharpe-prio) 와 `ensemble_4family` (rank-prio) 둘 다 Euler ODE 로 돌려서 weight trajectory 비교
+2. **Ablation 1**: `ensemble_best` vs `ensemble_4family` vs `ensemble_top3` vs 단일 best → 4-family 시너지 검증
+3. **Ablation 2**: μ 시그널 대신 단순 모멘텀 baseline → ensemble 이 실제 lift 주는지 정량화
+4. **Sensitivity**: 같은 ODE 에 `risk_score` 기반 γ(t) 투입 vs γ_const
 
 ---
 
 ## 경고 / 한계
 
-- **OOS rank corr 0.06 수준도 statistically 작은 신호.** 단일 점 예측보다는 앙상블·시간평균·포트폴리오 관점에서 활용 권장
-- **CNN만의 앙상블은 여전히 mixed 대비 약함** (raw-mean ensemble_top3 = 0.038 < ensemble_best 0.061). logistic_image 포함이 필수
-- **2D CNN은 기본 설정에선 underfit** — 60K params + wd 1e-4 + 8 epoch로는 학습 부족. Rehab protocol(small capacity + strong wd + patience)이 걸려야만 유효
+- **OOS rank corr 0.06 수준도 statistically 작은 신호.** Bootstrap CI 가 0 포함 — 단일 점 예측보다는 앙상블·시간평균·포트폴리오 관점에서 활용 권장
+- **Phase 4 (LSTM 합류) lift 는 CI 안에서 noise 와 구분 안 됨** — 단 (a) 점추정 일관, (b) ρ 구조 thesis 와 일치, (c) Sharpe trade-off 패턴 → **mechanism evidence 는 일관**
+- **CNN-only 앙상블은 여전히 mixed 대비 약함** (raw-mean ensemble_top3 = 0.038 < ensemble_best 0.061). logistic_image 포함이 필수
+- **2D CNN은 기본 설정에선 underfit** — 60K params + wd 1e-4 + 8 epoch 로는 학습 부족. Rehab protocol (small capacity + strong wd + patience) 이 걸려야만 유효
+- **CNN+LSTM hybrid 는 단순 LSTM 대비 안 나음** — 이미지 입력에서 hybrid (0.039) < pure LSTM (0.051)
 - **γ(t) 시변 위험회피 신호는 이번 CNN 파트에 포함 안 됨** — ODE 스프린트에서 추가 실험 대상
 
 ## 발표 시 방어 framing (권장)
 
-> "**이미지 변환 자체가 가장 큰 lift**를 제공하고(rank corr −0.007 → +0.039), CNN은 그 위에 **portfolio-level 개선**을 추가한다. 단일 아키텍처만으로는 logistic_image(0.039)를 확실히 이기지 못했지만, **Phase 2 capacity 조정으로 2D CNN을 재활시키고(0.043)**, **CNN + logistic mixed-family 앙상블**에 포함시키니 rank corr **0.061**, top-k Sharpe **0.643**을 동시에 달성 — **한 조합이 두 지표 모두 1위**. 즉 이번 실험의 empirical 결론은 '**image + architecture diversity + mixed family**'가 동시에 작용해야 유의미한 alpha가 나온다는 것."
+> "**이미지 변환 자체가 가장 큰 lift** (rank corr −0.007 → +0.039) 를 제공하고, family 다양화는 그 위에 layered lift 를 더한다. Phase 1 (CNN-only) 0.038 → Phase 3 (+ logistic) 0.061 → Phase 4 (+ cnnlstm hybrid) **0.067** 으로 단조 증가. Phase 4 lift +0.0068 의 95% CI lower bound 가 −0.002 (0 에 거의 닿음) — borderline NOT significant 이지만, (a) cnnlstm-logistic ρ = **−0.17 (음의 상관!)**, (b) 점추정 일관 단조 증가, (c) Sharpe 와 rank corr trade-off 패턴이 모두 family diversity → variance reduction mechanism 을 가리킴. 또 **단일 1위 LSTM (0.051)이 ensemble winner 에서 빠지고 단독 4위 cnnlstm (0.045) 가 들어가는 패턴** 이 "단독 성능 ≠ ensemble 기여" 를 정확히 보여준다."

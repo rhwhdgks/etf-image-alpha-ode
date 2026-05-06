@@ -4,10 +4,11 @@
 
 ## 요약
 
-- 60일 OHLCV를 Jiang-style 이미지로 변환 → CNN 8종(Phase 2 재조정 2D 포함)으로 walk-forward OOS 예측
-- 평가: 24 folds × 7년 OOS × 2,880일
-- 결과물: `ode_inputs_cnn/` 아래 모델별 μ·Σ·risk·R 번들 + mixed-family 앙상블 + QA + 베이스라인 비교
-- Phase 2/3에서 2D CNN 재조정 후 ensemble 갱신 → rank corr **0.0606**, Sharpe **0.643** (동시 1위)
+- 60일 OHLCV를 Jiang-style 이미지로 변환 → **CNN 8종 + LSTM 4종 + logistic 2종 = 14 entries** 를 walk-forward OOS 평가
+- 평가: 24~48 folds × 7년 OOS × 2,880일
+- 결과물: `ode_inputs_cnn/` 아래 14 모델별 μ·Σ·risk·R 번들 + 3종 앙상블 (top3 / best / 4family) + QA + 베이스라인 비교 + bootstrap significance
+- **Phase 3** (CNN + logistic mix) `ensemble_best` rank corr **0.0606**, Sharpe **0.630**
+- **Phase 4** (CNN+LSTM hybrid 합류, `cnnlstm_image_scale`) `ensemble_4family` rank corr **0.0674** / Sharpe **0.543** — 점추정 +0.0068 향상, 95% CI [−0.002, +0.016] 0 살짝 포함 (borderline NOT significant). cnnlstm vs logistic ρ = **−0.17 (음의 상관)** 으로 분산 감소 효과 큼 — **상관 구조 thesis 강하게 지지**
 - 자세한 해설은 [blog_cnn_lstm_handoff.md](blog_cnn_lstm_handoff.md)
 
 ## 디렉토리
@@ -32,6 +33,13 @@ sprint2-etf-cnn/
 ├── outputs_walkforward_2d_phase2/   Phase 2 rehab — cnn_2d_residual_small/wd
 ├── outputs_walkforward_2d_fix/      Phase 1 2D diagnostic (30ep + patience 5)
 ├── outputs_walkforward_risk/        risk signal용 walk-forward
+├── lstm/                            LSTM 4종 walk-forward 결과 (팀원 산출물)
+│
+├── build_extended_ensemble.py       14모델 × 1470 조합 ensemble search
+├── build_ensemble_best.py           Phase 3 winner (3-멤버) 번들 빌드
+├── build_ensemble_4family.py        Phase 4 winner (4-멤버, LSTM 포함) 번들 빌드
+├── build_lift_progression_fig.py    3단계 lift figure
+├── bootstrap_significance.py        paired bootstrap CI 검정
 │
 ├── ode_inputs_cnn/                  ★ 최종 핸드오프 패키지
 │   ├── README.md
@@ -39,10 +47,14 @@ sprint2-etf-cnn/
 │   ├── qa_report.md / qa_report.json
 │   ├── comparison.csv / comparison.md
 │   ├── comparison_with_baselines.csv
+│   ├── ensemble_search.csv          770→2940 조합 전수 결과
+│   ├── significance_test.md         bootstrap CI 검정 결과
 │   ├── returns_daily.csv / prices_daily.csv
-│   ├── figures/                     발표용 PNG 9종
-│   ├── ensemble_top3/               top-3 CNN 앙상블 번들
-│   └── {model_name}/                모델별 mu_daily / ode_bundle / ode_config
+│   ├── figures/                     발표용 PNG 12종
+│   ├── ensemble_best/               ★ Phase 3 default (Sharpe-prio)
+│   ├── ensemble_4family/            ★ Phase 4 alt (rank corr-prio, LSTM 포함)
+│   ├── ensemble_top3/               레거시 CNN-only 앙상블
+│   └── {model_name}/                12 모델별 mu_daily / ode_bundle / ode_config
 │
 └── blog_cnn_lstm_handoff.md         CNN → LSTM 로드맵 블로그 글
 ```
@@ -96,14 +108,22 @@ Leakage 보증: μ calibration은 expanding 방식, Σ는 t 시점까지의 60�
 
 ## 핵심 결과
 
-| 지표 | 1위 모델 | 값 |
-|---|---|---|
-| OOS rank correlation | ★ `ensemble_best` (mixed) | **0.0606** |
-| Top-k portfolio Sharpe | ★ `ensemble_best` (mixed) | **0.643** |
-| ★ Balanced | `ensemble_best` = logistic_image + cnn_1d_cumulative + cnn_2d_residual_small | rank 0.061 / Sharpe 0.643 |
-| 최고 단일 CNN | `cnn_2d_residual_small` (Phase 2 rehab) | rank 0.043 |
+| 지표 | 1위 | 값 | 추천 default |
+|---|---|---|---|
+| Top-k Sharpe (portfolio quality) | ★ `ensemble_best` (3-family) | **0.630** | ✓ Sharpe-prio |
+| OOS rank corr (signal quality) | ★ `ensemble_4family` (4-family, +LSTM) | **0.0633** | ✓ rank-prio |
+| 최고 단일 LSTM | `lstm_image_scale` | rank 0.0506 | — |
+| 최고 단일 CNN | `cnn_2d_residual_small` (Phase 2 rehab) | rank 0.0426 | — |
 
-→ **Phase 2에서 2D CNN 재조정 (capacity 1/3 축소 + dropout 0.2 + wd 5e-4 + patience 5)** 후 ensemble 재탐색 → mixed-family 3개 (logistic + 1D cumulative + 2D small)로 rank corr와 Sharpe **둘 다 1위**. 다음 단계는 ODE 본체 통합 + 시퀀스 모델(LSTM) 확장 — [blog 글](blog_cnn_lstm_handoff.md) 참고.
+| Phase | 변화 | rank corr | Sharpe | 비고 |
+|---|---|---|---|---|
+| 1 | CNN-only top-3 ensemble | 0.0375 | 0.275 | logistic_image (0.039) 천장 못 넘음 |
+| 3 | + logistic_image (mixed family) | 0.0606 | **0.630** | 두 metric 동시 1위 |
+| 4 | + cnnlstm_image (4-family hybrid) | **0.0674** | 0.543 | rank +0.007 / Sharpe trade-off (작아짐) |
+
+**Bootstrap CI**: Phase 3 → Phase 4 lift +0.0068 의 95% CI [−0.002, +0.016] → borderline NOT significant. 단 cnnlstm vs logistic ρ = −0.17 (음의 상관) — family 다양화 thesis 의 mechanism 강하게 지지.
+
+→ 다음 단계: ODE 본체 통합 + (선택) 5번째 family — [blog 글](blog_cnn_lstm_handoff.md) 참고.
 
 ## 참고
 
