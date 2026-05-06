@@ -22,6 +22,8 @@ WF_DIRS = [
     "outputs_walkforward_1dcnn_extra",
     "outputs_walkforward_2d_residual",
     "outputs_walkforward_2d_phase2",
+    "lstm",
+    "cnnlstm",
 ]
 
 KEY_COLS = [
@@ -52,6 +54,15 @@ ENSEMBLE_CONFIGS = {
         ],
         "aggregation": "rank_mean",
     },
+    "ensemble_4family": {
+        "members": [
+            ("logistic_image_scale", "outputs_walkforward_4model"),
+            ("cnn_1d_cumulative_scale", "outputs_walkforward_1dcnn_extra"),
+            ("cnn_2d_residual_small", "outputs_walkforward_2d_phase2"),
+            ("cnnlstm_image_scale", "cnnlstm"),
+        ],
+        "aggregation": "rank_mean",
+    },
 }
 
 
@@ -72,7 +83,7 @@ def compute_ensemble_portfolio_metrics(
         df["model_name"] = model
         frames.append(df)
     members = pd.concat(frames, ignore_index=True)
-    members["date"] = pd.to_datetime(members["date"])
+    members["date"] = pd.to_datetime(members["date"], format="mixed").dt.normalize()
 
     if cfg["aggregation"] == "rank_mean":
         members["signal_value"] = members.groupby(["date", "model_name"])["signal_value"].rank(pct=True)
@@ -137,10 +148,16 @@ def load_unified() -> pd.DataFrame:
 
 
 def classify_family(name: str) -> str:
+    if name == "ensemble_4family":
+        return "Ensemble (4-family) ★★"
     if name == "ensemble_best":
         return "Ensemble (CNN + logistic) ★"
     if name.startswith("ensemble_"):
         return "Ensemble (CNN only)"
+    if name.startswith("cnnlstm_") or name.startswith("cnn_lstm_"):
+        return "CNN+LSTM hybrid"
+    if name.startswith("lstm_"):
+        return "LSTM (sequence)"
     if name.startswith("logistic_") and "image" in name:
         return "Baseline (image+logistic)"
     if name.startswith("logistic_"):
@@ -153,11 +170,14 @@ def classify_family(name: str) -> str:
 
 
 FAMILY_COLORS = {
+    "Ensemble (4-family) ★★": "#5d0c0c",
     "Ensemble (CNN + logistic) ★": "#8e1b1b",
     "Ensemble (CNN only)": "#c0392b",
     "CNN 1D image": "#2980b9",
     "CNN 2D image": "#8e44ad",
     "CNN (no image)": "#16a085",
+    "LSTM (sequence)": "#d4ac0d",
+    "CNN+LSTM hybrid": "#b9770e",
     "Baseline (image+logistic)": "#e67e22",
     "Baseline (no image)": "#7f8c8d",
 }
@@ -167,25 +187,27 @@ def fig_model_comparison_with_baseline(df: pd.DataFrame) -> None:
     df = df.sort_values("future_return_rank_correlation", ascending=True)
     colors = [FAMILY_COLORS[f] for f in df["family"]]
 
-    fig, axes = plt.subplots(1, 2, figsize=(16, 7), sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(17, 9), sharey=True)
     axes[0].barh(df["model_name"], df["future_return_rank_correlation"],
                  color=colors, edgecolor="black", linewidth=0.5)
     axes[0].axvline(0, color="black", linewidth=0.8)
-    axes[0].set_xlabel("OOS rank correlation")
-    axes[0].set_title("Signal quality (rank corr)")
+    axes[0].set_xlabel("OOS rank correlation", fontsize=12)
+    axes[0].set_title("Signal quality (rank corr)", fontsize=14)
+    axes[0].tick_params(axis="y", labelsize=11)
 
     sharpe = df.set_index("model_name")["top_k_sharpe"].reindex(df["model_name"]).fillna(0).values
     axes[1].barh(df["model_name"], sharpe, color=colors, edgecolor="black", linewidth=0.5)
     axes[1].axvline(0, color="black", linewidth=0.8)
-    axes[1].set_xlabel("Top-k portfolio Sharpe (annualized)")
-    axes[1].set_title("Portfolio-level quality (top-k Sharpe)")
+    axes[1].set_xlabel("Top-k portfolio Sharpe (annualized)", fontsize=12)
+    axes[1].set_title("Portfolio-level quality (top-k Sharpe)", fontsize=14)
 
-    # legend
+    # legend below the figure
     handles = [plt.Rectangle((0, 0), 1, 1, facecolor=c, edgecolor="black") for c in FAMILY_COLORS.values()]
-    fig.legend(handles, list(FAMILY_COLORS.keys()), loc="lower center", ncol=3,
-               bbox_to_anchor=(0.5, -0.05), frameon=False, fontsize=11)
-    fig.suptitle("All models — CNN vs non-CNN baselines", fontsize=18, y=1.02)
-    fig.tight_layout()
+    fig.legend(handles, list(FAMILY_COLORS.keys()), loc="upper center", ncol=5,
+               bbox_to_anchor=(0.5, -0.02), frameon=False, fontsize=11)
+    fig.suptitle("All models — CNN, logistic, LSTM, hybrid (★ = ensemble winners)",
+                 fontsize=16, y=1.00)
+    fig.tight_layout(rect=(0, 0.04, 1, 0.97))
     fig.savefig(FIG / "01_model_comparison.png", dpi=160, bbox_inches="tight")
     plt.close(fig)
     print(f"  wrote {FIG/'01_model_comparison.png'}")

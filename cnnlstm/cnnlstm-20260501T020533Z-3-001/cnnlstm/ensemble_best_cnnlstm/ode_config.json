@@ -1,0 +1,49 @@
+{
+  "model_name": "ensemble_best_cnnlstm",
+  "mu_model": "ensemble_best_cnnlstm",
+  "risk_model": "logistic_cumulative_scale",
+  "horizon": 20,
+  "sigma_window": 60,
+  "n_assets": 7,
+  "assets": [
+    "alternative",
+    "corp_bond_ig",
+    "developed_equity",
+    "emerging_equity",
+    "korea_equity",
+    "short_treasury",
+    "treasury_7_10y"
+  ],
+  "mu_date_range": [
+    "2014-09-24",
+    "2026-04-13"
+  ],
+  "sigma_date_range": [
+    "2012-04-10",
+    "2026-04-10"
+  ],
+  "n_dates_oos": 2880,
+  "oos_rank_corr_mean": 0.055247101457545335,
+  "oos_pct_positive": 0.5420138888888889,
+  "mu_range_daily": [
+    -0.002160246899469287,
+    0.0020773025272775286
+  ],
+  "mu_calibration": {
+    "method": "cross_sectional_zscore_x_expanding_return_std",
+    "shrinkage": 0.4,
+    "prior_std_before_14_dates": 0.05,
+    "output_units": {
+      "mu_hat_horizon": "expected return over horizon (daily_log_return scale summed)",
+      "mu_hat_daily": "mu_hat_horizon / horizon (daily return scale)",
+      "mu_raw_score": "raw CNN output prior to calibration (unitless score)"
+    },
+    "source_code": "make_ode_inputs.calibrate_mu_expanding"
+  },
+  "ensemble_members": [
+    "logistic_image_scale",
+    "cnnlstm_image_scale"
+  ],
+  "aggregation": "cross_sectional_percentile_rank_mean",
+  "selection_rationale": "Chosen from ensemble_search_with_cnnlstm.csv as the best combination by OOS rank correlation under rank aggregation. The selected members are logistic_image_scale and cnnlstm_image_scale. This combination achieved OOS rank correlation of 0.0552 and top-k Sharpe of 0.4412. CNNLSTM is added as a separate sequential-image model family, distinct from the existing cnn_lstm_image_scale result."
+}

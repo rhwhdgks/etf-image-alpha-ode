@@ -1,8 +1,12 @@
 # 주가 차트를 이미지로 바꿔서 CNN에 넣어봤다 — 그런데 베이스라인과 같은 티어였다
 
-> 7개 ETF 자산의 μ 예측에 CNN 7종을 붙였다. 결과를 한 줄로 요약하면: **CNN 단독 성능은 로지스틱 베이스라인과 같은 티어, 하지만 상관이 낮아서 섞었더니 시너지가 나왔다**. 이 글은 "**이겼다/졌다**"가 아니라 "**상관구조를 봐야 보인다**"는 교훈, 그리고 왜 다음 단계로 LSTM이 자연스러운가를 정리한 것.
+> 7개 ETF 자산의 μ 예측에 CNN 7종 + LSTM/hybrid 4종을 붙였다. 결과를 한 줄로 요약하면: **단독 성능은 모두 비슷한 티어, 하지만 상관이 낮은 family 끼리 섞을 때마다 천장이 올라갔다**. 이 글은 "**이겼다/졌다**"가 아니라 "**상관구조를 봐야 보인다**"는 교훈, 그리고 그 thesis 가 LSTM 합류 후에도 일관되는지의 검증 기록.
 >
-> **최종 결과**: logistic + 1D CNN + 2D CNN (재조정판) 3-family mixed ensemble로 rank corr **0.061**, top-k Sharpe **0.643** 동시 1위.
+> **최종 결과**:
+> - Phase 3 — `ensemble_best` (logistic + 1D CNN + 2D CNN): rank corr **0.0606** / Sharpe **0.643**
+> - Phase 4 — `ensemble_4family` (+ cnnlstm hybrid): rank corr **0.0674** / Sharpe 0.543 (rank corr 천장 갱신, Sharpe trade-off)
+> - Bootstrap CI [−0.002, +0.016] 0 살짝 포함 → borderline NOT significant
+> - 단 cnnlstm vs logistic ρ = **−0.17 (음의 상관)** 으로 mechanism evidence 강하게 일관
 
 ---
 
@@ -211,29 +215,116 @@ CNN이 "사진 한 장을 보고 판단하는 사람"이라면, LSTM은 "**연�
 
 ---
 
-## 9. 정리
+## 9. Phase 4 — LSTM family 합류 후 검증 결과
+
+LSTM 팀원이 4개 모델을 합류시켰다: 순수 LSTM 2종 (`lstm_*`) + CNN+LSTM hybrid 2종 (`cnnlstm_*`, 팀원 v2 작품).
+
+### 단일 LSTM family 성능 — 예측한 것보다 잘 나왔다
+
+| 모델 | rank corr | Sharpe |
+|---|---|---|
+| **`lstm_image_scale`** | **0.0506** | 0.185 |
+| `cnnlstm_image_scale` (팀원 작품) | 0.0448 | **0.434** |
+| `cnnlstm_cumulative_scale` | −0.0125 | 0.361 |
+| `lstm_cumulative_scale` | −0.0167 | 0.297 |
+
+- **`lstm_image_scale` 이 단독 1위** (0.0506) — 단일 CNN best (0.043) 보다 점추정 우위
+- **`cnnlstm_image_scale` 이 Sharpe 1위** (0.434) — rank 는 4위지만 portfolio quality 가 LSTM family 중 최고. 점예측 ≠ portfolio 분리 케이스
+- 개별 격차는 noise 범위 — 0.043 ↔ 0.045 ↔ 0.051 차이는 CI 안
+
+### 14모델 ensemble 재탐색 (1470 조합 × 2 = 2940)
+
+| 우선 metric | Winner | rank corr | Sharpe |
+|---|---|---|---|
+| rank corr | **logistic_image + cnn_1d_cumulative + cnn_2d_residual_small + cnnlstm_image** (k=4) | **0.0671** | 0.541 |
+| (이전 winner, lstm_image 버전) | logistic + 1D + 2D + lstm_image | 0.0653 | 0.452 |
+| Sharpe | `logistic_image + cnn_1d_cumulative + cnn_2d_residual_small` (k=3, Phase 3 winner) | 0.0614 | **0.6302** |
+
+**§9 의 두 metric 동시 1위 패턴은 여전히 깨졌다**. Phase 4 합류 후 (cnnlstm 버전):
+- rank corr +0.0068 (3-family → 4-family, 이전 lstm 버전 +0.0027 의 2.5배)
+- Sharpe −0.099 (이전 lstm 버전 −0.178 대비 trade-off 작아짐)
+
+### "단독 1위가 ensemble winner 에 못 들어간다" 의 정확한 사례
+
+`lstm_image_scale` 가 단독 rank corr 1위 (0.0506) 인데, ensemble winner top-1 에 못 들어가고 단독 4위 `cnnlstm_image_scale` (0.0448) 가 들어간다. 이유는 ρ 매트릭스에 있다:
+
+| | logistic | 1D | 2D | cnnlstm | lstm |
+|---|---|---|---|---|---|
+| logistic_image | 1.00 | 0.03 | 0.16 | **−0.17** | −0.16 |
+| 1D cumulative | 0.03 | 1.00 | 0.09 | 0.32 | 0.18 |
+| 2D residual_small | 0.16 | 0.09 | 1.00 | 0.10 | 0.13 |
+| **cnnlstm_image** | **−0.17** | 0.32 | 0.10 | 1.00 | 0.63 |
+| lstm_image | −0.16 | 0.18 | 0.13 | 0.63 | 1.00 |
+
+- **`cnnlstm_image` vs `logistic`: ρ = −0.17 (음의 상관!)** — 가장 독립적
+- `cnnlstm` vs `cnn_2d`: 0.10 (낮음)
+- `cnnlstm` vs `lstm_image`: 0.63 (같은 LSTM family, 둘 다 winner 에 못 들어가는 이유)
+
+**§7 thesis 의 정확한 실증**: 신호 강도보다 **"멤버 간 상관"** 이 ensemble 결과를 지배. cnnlstm 이 단독 4위지만 logistic 과 음의 상관 (−0.17) 이라 합류 효과가 lstm_image (logistic 과 ρ −0.16, 비슷하지만 cnnlstm 이 1D/2D 와의 상관까지 종합하면 더 독립적) 보다 큼.
+
+### Bootstrap CI — 정직성 점검
+
+paired bootstrap (B=10000) 으로 fold 별 rank corr 시계열 비교:
+
+| Pair | mean diff | 95% CI | Verdict |
+|---|---|---|---|
+| 4-family (cnnlstm) − 3-family | **+0.0068** | [−0.0024, +0.0157] | **borderline NOT significant** |
+| cnnlstm best − CNN best (단일) | +0.0022 | [−0.0201, +0.0245] | NOT significant |
+
+이전 (lstm 버전) lift +0.0027 / CI [−0.007, +0.012] 대비 점추정 2.5배 + CI lower bound 가 0 에 거의 닿음 (−0.0024). **여전히 strict significance 는 부족하지만 trend evidence 가 강해졌다**.
+
+### 3단계 lift 진행
+
+![3-stage lift](ode_inputs_cnn/figures/11_3stage_lift_progression.png)
+
+Phase 1 (CNN-only) **0.038** → Phase 3 (+ logistic) **0.061** → Phase 4 (+ cnnlstm) **0.067**. 단조 증가, Phase 3 → 4 의 step 이 이전보다 커짐.
+
+![Bootstrap CI](ode_inputs_cnn/figures/12_bootstrap_ci.png)
+
+### 정직한 framing
+
+"family 다양화가 lift 를 만든다" 는 thesis 가 한 번 더 검증되었지만, **여전히 borderline NOT significant**. 다음 세 줄 사이의 차이를 정확히 잡아야 한다:
+
+- ❌ "Phase 4 lift +11% — cnnlstm 이 천장을 뚫었다" (overclaim)
+- ❌ "Phase 4 도 noise — LSTM 무의미" (underclaim)
+- ✅ "점추정 +0.007 (이전 +0.003 의 2배), CI lower bound 가 0 에 거의 닿음, ρ = −0.17 (음의 상관) 이 mechanism 강하게 지지 — strict statistical proof 까지는 부족하지만 trend evidence 가 일관되게 강해지고 있다"
+
+**production 정책**: trade-off 를 회피하지 말고 두 번들 다 제공.
+- `ensemble_best` (Sharpe 우선) — 실무 default
+- `ensemble_4family` (rank-corr 우선) — thesis 검증용 + cnnlstm 합류 lift
+
+ODE 팀이 두 입력으로 weight trajectory 차이를 비교하면 "rank corr 의 미세 lift 가 portfolio level 에서 어떻게 펼쳐지는가" 라는 새 ablation 도 가능.
+
+---
+
+## 10. 정리
 
 ### ✅ 얻은 것
-- 9개 모델(7 CNN + 2 logistic) OOS 성능 맵 — 대부분 같은 티어라는 정직한 관찰
-- 2×2 ablation으로 lift 기여 분해 (이미지 변환이 rank corr 주 기여, CNN은 Sharpe 기여)
-- CNN-only ensemble의 한계 규명 (0.032 — logistic_image 못 넘음)
-- Mixed-family ensemble로 1차 돌파 (0.042)
-- 2D CNN underperform 원인 규명 — overfit이 아니라 undertrain + overparam
-- 재조정 2D 포함 재탐색으로 2차 돌파 (0.061 / Sharpe 0.643, 두 metric 동시 1위)
-- ODE 스프린트가 바로 쓸 수 있는 μ·Σ·R·risk 번들 — `ensemble_best` v2가 default
+- 13 모델 (7 CNN + 2 logistic + 2 LSTM + 2 CNN+LSTM hybrid) OOS 성능 맵 — 대부분 같은 티어라는 정직한 관찰
+- 2×2 ablation 으로 lift 기여 분해 (이미지 변환이 rank corr 주 기여, CNN/LSTM 은 Sharpe 기여)
+- CNN-only ensemble 의 한계 규명 (0.038 — logistic_image 못 넘음)
+- Mixed-family ensemble 로 1차 돌파 (Phase 1 → 3, 0.038 → 0.061)
+- 2D CNN underperform 원인 규명 — overfit 이 아니라 undertrain + overparam
+- 재조정 2D 포함 재탐색으로 Phase 3 천장 0.061 (Sharpe 0.643 동시 1위)
+- cnnlstm hybrid 합류 Phase 4 — rank 0.067 (점추정 +0.007), CI lower bound −0.002 (0 에 거의 닿음)
+- "단독 1위 ≠ ensemble winner" 의 정확한 사례 발견 (lstm 0.051 단독 1위 vs cnnlstm 0.045 단독 4위 → ensemble winner 는 cnnlstm)
+- Bootstrap significance 테스트 인프라 구축 — 다음 sprint 도 재사용 가능
+- ODE 스프린트가 바로 쓸 수 있는 두 production 번들: `ensemble_best` (Sharpe-prio) + `ensemble_4family` (rank-prio)
 
 ### 🎯 다음
-- LSTM walk-forward 포맷 통일해서 같은 평가 그리드에 올리기
-- 현 3-family에 LSTM 합류 → 4-family mixed ensemble로 3차 천장 돌파 시도
-- ODE solver 실제 통합 + realized PnL backtest
+- ODE solver 실제 통합 + realized PnL backtest (두 ensemble 번들로 비교)
+- 5번째 family (tree / transformer) 탐색 — 같은 mechanism 검증 가능한지
+- γ(t) 시변 위험회피 신호 통합
 
-### 🧠 세 줄 교훈
+### 🧠 네 줄 교훈
 
-> **① "새 모델이 베이스라인을 이긴다"는 프레임을 경계하자.** 단일 metric으로 줄세우면 잘못된 교훈이 나오기 쉽다. 이번 경우 CNN과 logistic은 **같은 티어에서 서로 다른 강점**을 가졌고, "이겼다/졌다"의 질문은 이 상보 구조를 덮는다. 대신 "**어떤 축의 정보를 잡느냐**"로 프레임을 바꾸면 그림이 보인다.
+> **① "새 모델이 베이스라인을 이긴다"는 프레임을 경계하자.** 단일 metric으로 줄세우면 잘못된 교훈이 나오기 쉽다. 이번 경우 CNN·logistic·LSTM 은 **같은 티어에서 서로 다른 강점**을 가졌고, "이겼다/졌다"의 질문은 이 상보 구조를 덮는다. 대신 "**어떤 축의 정보를 잡느냐**"로 프레임을 바꾸면 그림이 보인다.
 >
-> **② 앙상블의 진짜 레버는 "상관 구조".** 같은 family끼리는 ρ ≈ 0.5~0.6으로 닮아서 천장이 있고, family를 섞을 때 진짜 lift가 나온다. logistic + 1D CNN + 2D CNN 3-family mix로 rank corr 0.032 → 0.061, Sharpe 0.374 → 0.643으로 두 번 뚫렸다. 개별 모델 성능보다 상관 매트릭스를 먼저 보자.
+> **② 앙상블의 진짜 레버는 "상관 구조".** 같은 family 끼리는 ρ ≈ 0.5~0.6 으로 닮아서 천장이 있고, family 섞을 때 진짜 lift 가 나온다. Phase 1 → 3 → 4 로 rank corr 단조 증가 (0.038 → 0.061 → 0.067), 그리고 **단독 1위 LSTM 이 ensemble winner 에서 빠지고 단독 4위 cnnlstm 이 들어가는 패턴** — cnnlstm vs logistic ρ = −0.17 (음의 상관!) 때문. 개별 모델 성능보다 ρ 매트릭스를 먼저 보자.
 >
-> **③ "underperform"의 원인을 단정짓지 말고 학습곡선부터 찍어라.** 2D CNN을 "데이터 부족"으로 포기할 뻔했지만, 학습곡선이 말해준 건 **단지 일찍 멈췄다**는 것. Capacity 줄이고 학습 시간 늘리니 단일 CNN 1위로 올라왔고, ensemble 천장도 같이 뚫렸다. "모델이 나쁘다"와 "프로토콜이 나쁘다"는 전혀 다른 문제.
+> **③ "underperform"의 원인을 단정짓지 말고 학습곡선부터 찍어라.** 2D CNN 을 "데이터 부족"으로 포기할 뻔했지만, 학습곡선이 말해준 건 **단지 일찍 멈췄다**는 것. Capacity 줄이고 학습 시간 늘리니 단일 CNN 1위로 올라왔고, ensemble 천장도 같이 뚫렸다. "모델이 나쁘다"와 "프로토콜이 나쁘다"는 전혀 다른 문제.
+>
+> **④ Lift 가 보여도 CI 까지 보자.** Phase 4 lift 의 95% CI lower bound 가 0 에 거의 닿지만 살짝 미만 — strict statistical proof 부족. 그러나 점추정 일관 단조 증가 + ρ = −0.17 음의 상관 + Sharpe trade-off 가 모두 mechanism 과 일치. 결론은 "lift 가 있다" 가 아니라 **"mechanism evidence 가 일관되게 쌓인다"** — 둘은 다른 주장.
 
 ---
 

@@ -105,7 +105,7 @@ class SequenceDilatedCnn(nn.Module):
 class ImageCnn(nn.Module):
     def __init__(self):
         super().__init__()
-        self.network = nn.Sequential(
+        self.feature_head = nn.Sequential(
             nn.Conv2d(1, 16, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(2),
@@ -119,11 +119,14 @@ class ImageCnn(nn.Module):
             nn.Linear(64 * 4 * 4, 64),
             nn.ReLU(),
             nn.Dropout(0.1),
-            nn.Linear(64, 1),
         )
+        self.output = nn.Linear(64, 1)
+
+    def forward_features(self, inputs: torch.Tensor) -> torch.Tensor:
+        return self.feature_head(inputs)
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
-        return self.network(inputs).squeeze(-1)
+        return self.output(self.forward_features(inputs)).squeeze(-1)
 
 
 class ImageResidualBlock(nn.Module):
@@ -157,21 +160,26 @@ class ImageResidualCnn(nn.Module):
             nn.MaxPool2d(2),
         )
         self.block2 = ImageResidualBlock(c2)
-        self.head = nn.Sequential(
+        self.feature_head = nn.Sequential(
             nn.AdaptiveAvgPool2d((4, 4)),
             nn.Flatten(),
             nn.Linear(c2 * 4 * 4, 64),
             nn.ReLU(),
             nn.Dropout(dropout),
-            nn.Linear(64, 1),
         )
+        self.output = nn.Linear(64, 1)
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    def _conv_features(self, inputs: torch.Tensor) -> torch.Tensor:
         features = self.stem(inputs)
         features = self.block1(features)
         features = self.transition(features)
-        features = self.block2(features)
-        return self.head(features).squeeze(-1)
+        return self.block2(features)
+
+    def forward_features(self, inputs: torch.Tensor) -> torch.Tensor:
+        return self.feature_head(self._conv_features(inputs))
+
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        return self.output(self.forward_features(inputs)).squeeze(-1)
 
 
 class SqueezeExcitation(nn.Module):
@@ -321,3 +329,20 @@ def predict_torch_model(
         confidence = np.abs(scores - 0.5) * 2.0
         return scores, confidence
     return raw, None
+
+
+def extract_torch_features(
+    model: nn.Module,
+    features: np.ndarray,
+    batch_size: int,
+) -> np.ndarray:
+    if not hasattr(model, "forward_features"):
+        raise ValueError(f"{model.__class__.__name__} does not expose forward_features()")
+
+    loader = DataLoader(TensorDataset(torch.from_numpy(features).float()), batch_size=batch_size, shuffle=False)
+    outputs = []
+    model.eval()
+    with torch.no_grad():
+        for (batch_x,) in loader:
+            outputs.append(model.forward_features(batch_x).cpu().numpy())
+    return np.concatenate(outputs).astype(float)

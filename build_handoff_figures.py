@@ -35,11 +35,18 @@ MODEL_DIRS = [
     "cnn_1d_attention_image_scale",
     "cnn_2d_rendered_images",
     "cnn_2d_residual_images",
+    "cnn_2d_residual_small",
+    "lstm_image_scale",
+    "lstm_cumulative_scale",
+    "cnnlstm_image_scale",
+    "cnnlstm_cumulative_scale",
     "ensemble_top3",
+    "ensemble_best",
+    "ensemble_4family",
 ]
 
 sns.set_theme(style="whitegrid", context="talk")
-PALETTE = sns.color_palette("tab10", n_colors=len(MODEL_DIRS))
+PALETTE = sns.color_palette("tab20", n_colors=len(MODEL_DIRS))
 MODEL_COLOR = {m: PALETTE[i] for i, m in enumerate(MODEL_DIRS)}
 ENSEMBLE_COLOR = "#c0392b"
 
@@ -139,12 +146,62 @@ def fig_sigma_condition(ensemble_bundle: pd.DataFrame) -> None:
 
 
 def fig_model_correlation(all_raw: pd.DataFrame) -> None:
-    wide = all_raw.pivot_table(index=["date", "asset"], columns="model", values="mu_raw_score")
-    wide = wide.dropna()
-    corr = wide.corr()
-    corr = corr.reindex(index=MODEL_DIRS, columns=MODEL_DIRS)
+    """Correlation matrix including logistic baselines (loaded separately from
+    walkforward CSVs) since logistic models have no per-model bundle dir."""
+    base_models = [m for m in MODEL_DIRS if not m.startswith("ensemble_")]
 
-    fig, ax = plt.subplots(figsize=(10, 8))
+    wide_cnn = (
+        all_raw.pivot_table(index=["date", "asset"], columns="model", values="mu_raw_score")
+        .reindex(columns=base_models)
+    )
+
+    LOGISTIC_SRC = {
+        "logistic_image_scale": "outputs_walkforward_4model",
+        "logistic_cumulative_scale": "outputs_walkforward_4model",
+    }
+    log_frames = []
+    repo_root = ROOT.parent
+    for m, d in LOGISTIC_SRC.items():
+        df = pd.read_csv(repo_root / d / "walkforward_predictions.csv")
+        df["date"] = pd.to_datetime(df["date"], format="mixed").dt.normalize()
+        df = df[df["model_name"] == m][["date", "asset", "signal_value"]].copy()
+        df = df.rename(columns={"signal_value": m}).set_index(["date", "asset"])
+        log_frames.append(df)
+    wide_log = pd.concat(log_frames, axis=1)
+    wide = pd.concat([wide_cnn, wide_log], axis=1).dropna()
+    corr = wide.corr()
+
+    label_map = {
+        "logistic_image_scale":          "logistic_image",
+        "logistic_cumulative_scale":     "logistic_cumulative",
+        "cnn_1d_cumulative_scale":       "1d_cumulative",
+        "cnn_1d_image_scale":            "1d_image",
+        "cnn_1d_multiscale_image_scale": "1d_multiscale",
+        "cnn_1d_dilated_image_scale":    "1d_dilated",
+        "cnn_1d_attention_image_scale":  "1d_attention",
+        "cnn_2d_rendered_images":        "2d_rendered",
+        "cnn_2d_residual_images":        "2d_residual",
+        "cnn_2d_residual_small":         "2d_residual_small ★",
+        "lstm_image_scale":              "lstm_image",
+        "lstm_cumulative_scale":         "lstm_cumulative",
+        "cnnlstm_image_scale":           "cnnlstm_image ★",
+        "cnnlstm_cumulative_scale":      "cnnlstm_cumulative",
+    }
+    # Order: logistic first, then CNN 1D, CNN 2D, LSTM, hybrid
+    ordered = [
+        "logistic_image_scale", "logistic_cumulative_scale",
+        "cnn_1d_image_scale", "cnn_1d_cumulative_scale",
+        "cnn_1d_multiscale_image_scale", "cnn_1d_dilated_image_scale", "cnn_1d_attention_image_scale",
+        "cnn_2d_rendered_images", "cnn_2d_residual_images", "cnn_2d_residual_small",
+        "lstm_image_scale", "lstm_cumulative_scale",
+        "cnnlstm_image_scale", "cnnlstm_cumulative_scale",
+    ]
+    corr = corr.reindex(index=ordered, columns=ordered)
+    pretty = [label_map.get(m, m) for m in ordered]
+    corr.index = pretty
+    corr.columns = pretty
+
+    fig, ax = plt.subplots(figsize=(15, 12))
     sns.heatmap(
         corr,
         annot=True,
@@ -154,9 +211,16 @@ def fig_model_correlation(all_raw: pd.DataFrame) -> None:
         vmin=-1,
         vmax=1,
         ax=ax,
-        cbar_kws={"label": "Pearson corr (raw CNN scores)"},
+        annot_kws={"size": 11, "weight": "bold"},
+        linewidths=0.4,
+        linecolor="white",
+        cbar_kws={"label": "Pearson ρ (raw signal)", "shrink": 0.8},
+        square=True,
     )
-    ax.set_title("Raw CNN score correlation across models")
+    ax.set_title("Model raw-signal correlation matrix (★ = ensemble_4family member)", fontsize=15, pad=14)
+    ax.tick_params(axis="x", labelsize=11, rotation=40)
+    ax.tick_params(axis="y", labelsize=11, rotation=0)
+    plt.setp(ax.get_xticklabels(), ha="right", rotation_mode="anchor")
     save(fig, "05_model_raw_correlation.png")
 
 

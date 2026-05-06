@@ -50,13 +50,18 @@ CNN_MODELS = {
     "cnn_2d_rendered_images",
     "cnn_2d_residual_images",
     "cnn_2d_residual_small",
+    "lstm_image_scale",
+    "lstm_cumulative_scale",
+    "cnnlstm_image_scale",
+    "cnnlstm_cumulative_scale",
 }
 
 
 def load_and_merge_predictions(paths: list[str]) -> pd.DataFrame:
     parts = []
     for p in paths:
-        df = pd.read_csv(p, parse_dates=["date"])
+        df = pd.read_csv(p)
+        df["date"] = pd.to_datetime(df["date"], format="mixed").dt.normalize()
         parts.append(df)
     merged = pd.concat(parts, ignore_index=True)
     merged = merged.drop_duplicates(subset=["date", "asset", "model_name"], keep="last")

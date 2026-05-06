@@ -38,6 +38,10 @@ SOURCES = {
     "cnn_1d_multiscale_image_scale":"outputs_walkforward_1dcnn_extra",
     "cnn_2d_residual_images":       "outputs_walkforward_2d_residual",
     "cnn_2d_residual_small":        "outputs_walkforward_2d_phase2",
+    "lstm_image_scale":             "lstm",
+    "lstm_cumulative_scale":        "lstm",
+    "cnnlstm_image_scale":          "cnnlstm",
+    "cnnlstm_cumulative_scale":     "cnnlstm",
 }
 
 HORIZON = 20
@@ -52,7 +56,7 @@ def load_long() -> pd.DataFrame:
         df["model_name"] = model
         frames.append(df)
     long = pd.concat(frames, ignore_index=True)
-    long["date"] = pd.to_datetime(long["date"])
+    long["date"] = pd.to_datetime(long["date"], format="mixed").dt.normalize()
     return long
 
 
