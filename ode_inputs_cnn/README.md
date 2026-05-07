@@ -13,17 +13,21 @@ ode_inputs_cnn/
 ├── qa_report.md / .json      μ/Σ/risk sanity 점검
 ├── returns_daily.csv         일별 로그수익률 (wide, N dates × 7 assets)
 ├── prices_daily.csv          일별 close price (wide, 동일 그리드)
-├── ensemble_4family/          앙상블 (top-3 CNN signal 평균)
+├── ensemble_best/             Sharpe 우선 기본 μ 후보
+├── ensemble_4family/          rank-corr 우선 4-family μ 후보
+├── image_factor_extension/    Jiang-style image factor 검정/ODE 후보 신호
+├── cnn_1d_cumulative_scale/   최종 비교용 1D CNN 번들
+├── cnn_2d_residual_small/     최종 image-factor extractor용 2D CNN 번들
+├── lstm_* / cnnlstm_*         팀원 모델 및 4-family 비교용 번들
 │   ├── mu_daily.csv
 │   ├── risk_daily.csv
 │   ├── ode_bundle.csv
 │   └── ode_config.json
-└── cnn_*/                    개별 CNN 모델 번들 (7개, 같은 스키마)
-    ├── mu_daily.csv
-    ├── risk_daily.csv
-    ├── ode_bundle.csv
-    └── ode_config.json
 ```
+
+탐색 단계에서 사용한 CNN 변형과 중간 walk-forward 산출물은 루트의
+`archive/model_exploration/` 아래로 이동했습니다. 최종 발표/제출에서는
+`cnn_1d_cumulative_scale`과 `cnn_2d_residual_small`만 CNN 대표 모델로 보면 됩니다.
 
 ## 2. 기본 데이터 스펙
 
@@ -95,8 +99,8 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 
-BUNDLE_DIR = Path("ode_inputs_cnn/ensemble_top3")  # 최고 단일 모델
-# 또는 Path("ode_inputs_cnn/ensemble_4family")  # 앙상블
+BUNDLE_DIR = Path("ode_inputs_cnn/ensemble_best")  # Sharpe 우선 기본 μ 후보
+# 또는 Path("ode_inputs_cnn/ensemble_4family")  # rank-corr 우선 비교 후보
 
 bundle = pd.read_csv(BUNDLE_DIR / "ode_bundle.csv", parse_dates=["date"])
 assets = ['alternative', 'corp_bond_ig', 'developed_equity', 'emerging_equity', 'korea_equity', 'short_treasury', 'treasury_7_10y']
@@ -126,10 +130,12 @@ returns = pd.read_csv("ode_inputs_cnn/returns_daily.csv", parse_dates=["date"])
 
 [comparison.md](comparison.md) 참조.
 
-- **추천 기본값**: `ensemble_top3` — 단일 모델 중 OOS rank corr 1위
-- **1순위 단일 CNN**: `lstm_image_scale`
-- **대안 앙상블**: `ensemble_4family` — 개별 모델의 noise 완화, 로버스트하지만 보수적
-- **실험 용도**: 그 외 CNN 번들들은 sensitivity/ablation 시 비교용
+- **추천 기본값**: `ensemble_best` — Sharpe 기준 가장 안정적인 ODE μ 후보
+- **rank-corr 비교 후보**: `ensemble_4family` — Logistic + 1D CNN + 2D CNN + CNNLSTM 4-family 조합
+- **CNN 대표 1**: `cnn_1d_cumulative_scale` — 기존 ensemble에 기여한 1D CNN 계열
+- **CNN 대표 2**: `cnn_2d_residual_small` — Jiang-style image factor extractor
+- **image factor ablation**: `image_factor_extension/ode_mu_candidate_signals.csv`
+- **탐색용 CNN 변형**: `archive/model_exploration/`에 보관
 
 ## 6. 보증
 
