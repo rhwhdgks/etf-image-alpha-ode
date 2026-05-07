@@ -1,15 +1,20 @@
-# CNN 기반 Jiang-Style Image Factor 연구 정리
+# ETF `mu(t)` 예측을 위한 CNN/Ensemble 연구 정리
 
 ## 0. 전체 요약
 
-우리 팀의 최종 목표는 ETF 자산에 대해 ODE 기반 동적 포트폴리오 최적화를 하는 것이다. 이때 ODE optimizer에는 자산별 기대수익률 `mu(t)`가 필요한데, 내 역할은 CNN을 이용해 이 `mu(t)` 후보가 될 수 있는 이미지 기반 신호를 만드는 것이다.
+우리 팀의 최종 목표는 ETF 자산에 대해 ODE 기반 동적 포트폴리오 최적화를 하는 것이다. 이때 ODE optimizer에는 자산별 기대수익률 `mu(t)`가 필요한데, 내 역할은 CNN과 image-based signal을 이용해 이 `mu(t)` 후보를 만드는 것이다.
 
-처음에는 여러 CNN 변형을 실험했지만, 최종적으로는 역할을 두 개로 압축했다.
+처음에는 여러 CNN 변형을 단일 모델로 비교했다. 하지만 단일 CNN 하나가 baseline을 압도하는 구조는 아니었다. 오히려 중요한 결과는 **서로 다른 model family의 신호를 ensemble로 섞을 때 성능의 천장이 올라간다**는 점이었다.
 
-- `cnn_1d_cumulative_scale`: 기존 ensemble에 기여한 1D CNN 대표 모델
-- `cnn_2d_residual_small`: Jiang-style 이미지에서 image factor를 추출하는 메인 2D CNN
+그래서 연구 흐름은 다음과 같이 정리된다.
 
-이번 정리의 핵심은 두 번째 모델이다. Jiang 논문의 아이디어처럼 ETF 가격 경로를 이미지로 바꾸고, 2D CNN의 마지막 FC feature를 `image factor`로 추출했다. 그 결과 ETF 공통요인인 rolling PCA factor를 통제한 뒤에도 `image_score`가 통계적으로 유의했다. 다만 portfolio ensemble에 바로 섞었을 때 성능 개선은 제한적이어서, 현재 결론은 "이미지 경로 정보는 존재하지만, ODE 입력으로는 기본 `mu(t)`를 대체하기보다 보조 신호와 ablation 후보로 쓰는 것이 안전하다"이다.
+1. 선행연구를 바탕으로 가격 경로를 이미지로 변환한다.
+2. Logistic, 1D CNN, 2D CNN, LSTM, CNN-LSTM을 같은 OOS grid에서 비교한다.
+3. 단일 모델보다 family 간 상관구조가 더 중요하다는 점을 확인한다.
+4. `ensemble_best`와 `ensemble_4family`를 ODE용 `mu(t)` 후보로 만든다.
+5. Jiang-style 2D CNN 내부 feature를 `image factor`로 추출해 추가 검정한다.
+
+최종 결론은 다음과 같다. **ODE 기본 `mu(t)` 후보는 아직 `ensemble_best`가 가장 안전하고, Jiang-style image factor는 독립적인 가격 경로 정보가 있음을 보여주는 보조 신호와 ablation candidate로 쓰는 것이 적절하다.**
 
 ## 1. 연구의 출발점
 
@@ -23,7 +28,17 @@ ODE 포트폴리오 최적화는 매 시점마다 각 ETF에 얼마를 투자할
 
 `Sigma(t)`는 과거 수익률로 비교적 직접 계산할 수 있지만, `mu(t)`는 미래 수익률과 관련된 예측 신호가 필요하다. 그래서 이번 sprint에서는 ETF 가격 경로를 이미지로 바꿔 CNN에 넣고, 이 신호가 `mu(t)` 후보로 의미가 있는지 확인했다.
 
-## 2. Jiang 그림이 의미하는 것
+## 2. 선행연구에서 가져온 아이디어
+
+이번 연구는 완전히 새 모델을 임의로 만든 것이 아니라, 세 가지 선행연구 흐름을 ETF 데이터에 맞게 연결한 것이다.
+
+| 선행연구 흐름 | 가져온 아이디어 | 이번 연구에서의 적용 |
+|---|---|---|
+| Jiang-style price image | 가격 경로를 이미지로 변환해 CNN에 입력 | ETF OHLC 60일 window를 2D chart image로 변환 |
+| Image-based asset pricing / DV-style 해석 | 모델 출력을 단순 예측값이 아니라 characteristic/factor로 해석 | CNN 내부 FC feature를 image factor로 추출 |
+| ODE portfolio optimization | `mu(t)`, `Sigma(t)`, risk control을 이용해 동적 비중 결정 | ensemble score를 `mu(t)` 후보로 저장 |
+
+### 2.1 Jiang-style price image
 
 사용자가 보낸 Jiang 그림은 주가 데이터를 숫자 시계열로만 보지 않고, 일정 기간의 OHLC 경로를 작은 이미지로 바꿔 CNN에 넣는 구조를 보여준다.
 
@@ -31,7 +46,19 @@ ODE 포트폴리오 최적화는 매 시점마다 각 ETF에 얼마를 투자할
 
 중요한 점은 CNN의 최종 예측값만 보는 것이 아니라, output 직전의 FC representation을 가격 경로의 압축된 이미지 특성으로 볼 수 있다는 것이다. 이번 확장은 바로 이 부분을 ETF 연구에 적용한 것이다.
 
-## 3. 기존 CNN/LSTM 연구와의 연결
+### 2.2 Image-based asset pricing 관점
+
+Image-based asset pricing 계열 연구의 핵심은 이미지 모델의 출력이 단순한 black-box prediction score가 아니라, 가격 경로에서 추출된 characteristic 또는 factor로 해석될 수 있다는 점이다.
+
+이번 연구에서는 이 관점을 사용해 `cnn_2d_residual_small`의 output 직전 64차원 FC feature를 뽑고, 이를 PCA로 압축해 `image_factor_pc1~3`을 만들었다. 즉 CNN을 단순 예측 모델이 아니라 **가격 경로 factor extractor**로 사용했다.
+
+### 2.3 ODE portfolio optimization 관점
+
+ODE optimizer는 최종적으로 `mu(t)`와 `Sigma(t)`를 받아 portfolio weight path를 계산한다. 따라서 내 CNN 연구의 산출물은 단순 accuracy 표가 아니라, 나중에 ODE가 바로 읽을 수 있는 asset-date별 signal panel이어야 한다.
+
+그래서 최종 산출물은 `date`, `asset`, `model_name`, `signal_value` 형태로 저장했고, `ensemble_best`, `ensemble_4family`, image factor 후보를 모두 ODE 입력 후보로 넘길 수 있게 만들었다.
+
+## 3. 전체 연구 흐름: 단일 모델에서 ensemble까지
 
 기존 연구는 모델의 prediction score와 ensemble 성능 중심이었다.
 
@@ -47,6 +74,19 @@ ODE 포트폴리오 최적화는 매 시점마다 각 ETF에 얼마를 투자할
 
 즉, 기존 연구가 "어떤 모델이 예측을 잘하나"였다면, 이번 확장은 "이미지로 변환된 가격 경로가 독립적인 factor 정보를 갖고 있나"를 검정한 것이다.
 
+전체 진행은 다음 순서였다.
+
+| 단계 | 내용 | 핵심 결과 |
+|---|---|---|
+| Baseline | Logistic + cumulative/image scaling | 단순 모델도 생각보다 강함 |
+| CNN 탐색 | 1D CNN, attention, dilated, 2D CNN 등 비교 | 단일 CNN이 압도적으로 이긴 것은 아님 |
+| 2D CNN 재조정 | `cnn_2d_residual_small`로 capacity/regularization 조정 | 2D CNN이 image extractor로 쓸 수 있는 수준으로 개선 |
+| Mixed-family ensemble | Logistic + 1D CNN + 2D CNN 조합 | `ensemble_best`가 Sharpe 기준 강함 |
+| LSTM/CNNLSTM 합류 | 시간 순서 정보를 보는 family 추가 | `ensemble_4family`가 rank corr 기준 최고 |
+| Image factor 확장 | 2D CNN 내부 feature를 factor로 검정 | `image_score`가 PCA controls 이후에도 유의 |
+
+이 과정에서 가장 중요한 교훈은 **단일 CNN 구조를 계속 바꾸는 것보다 서로 다른 family의 신호를 조합하는 것이 더 큰 개선을 만든다**는 점이었다.
+
 ## 4. CNN 모델을 줄인 기준
 
 초기에는 CNN 모델이 많았다. 1D CNN, multiscale CNN, dilated CNN, attention CNN, 2D rendered image CNN, 2D residual CNN 등을 실험했다.
@@ -60,7 +100,7 @@ ODE 포트폴리오 최적화는 매 시점마다 각 ETF에 얼마를 투자할
 
 나머지 CNN 변형과 중간 walk-forward 결과는 `archive/model_exploration/`으로 옮겼다. 삭제한 것은 아니고, 필요할 때만 확인하는 탐색 기록으로 분리한 것이다.
 
-## 5. 이번에 구현한 방법
+## 5. Jiang-style image factor 챕터: 구현 방법
 
 메인 모델은 `cnn_2d_residual_small`로 고정했다. 이유는 Jiang 그림처럼 실제 2D chart image를 CNN에 넣는 구조와 가장 가깝고, 기존 Phase 2 실험에서 2D CNN을 재조정했을 때 단일 CNN rank correlation이 개선됐기 때문이다.
 
@@ -91,7 +131,32 @@ ODE 포트폴리오 최적화는 매 시점마다 각 ETF에 얼마를 투자할
 7. Rolling 252일 ETF return PCA loading을 공통요인 control로 만든다.
 8. `future_return ~ PCA controls + image factor` 형태의 pooled panel OLS를 date-clustered SE로 검정한다.
 
-## 6. Image factor 유의성 결과
+## 6. Ensemble을 만들게 된 이유와 최종 후보
+
+처음에는 CNN 모델 자체의 성능을 높이는 것이 목표처럼 보였다. 하지만 실험 결과, 대부분의 단일 모델은 비슷한 성능 구간에 몰려 있었다. 그래서 질문이 바뀌었다.
+
+```text
+어떤 단일 모델이 제일 좋은가?
+```
+
+보다 중요한 질문은 다음이었다.
+
+```text
+서로 다른 정보를 보는 모델을 어떻게 섞으면 ODE용 mu 후보가 더 안정적인가?
+```
+
+모델 간 score correlation을 확인했을 때, 같은 CNN family끼리는 서로 비슷하게 움직이는 경향이 있었다. 반면 Logistic, 1D CNN, 2D CNN, CNN-LSTM처럼 입력 표현과 구조가 다른 family끼리는 상관이 낮았다. 이 낮은 상관이 ensemble의 핵심 근거가 됐다.
+
+최종적으로 중요한 ensemble 후보는 두 개다.
+
+| 후보 | 구성 | 역할 |
+|---|---|---|
+| `ensemble_best` | Logistic + 1D CNN + 2D CNN | Sharpe 기준 ODE 기본 `mu(t)` 후보 |
+| `ensemble_4family` | Logistic + 1D CNN + 2D CNN + CNN-LSTM | rank correlation 기준 비교 후보 |
+
+실험상 `ensemble_best`는 portfolio Sharpe 기준으로 가장 안정적이었고, `ensemble_4family`는 cross-sectional rank correlation 기준으로 가장 높았다. 따라서 ODE 단계에서는 하나만 고정하기보다 두 후보를 같이 넘겨서 portfolio trajectory 차이를 비교하는 것이 좋다.
+
+## 7. Image factor 유의성 결과
 
 핵심 결과는 다음과 같다.
 
@@ -109,7 +174,7 @@ ODE 포트폴리오 최적화는 매 시점마다 각 ETF에 얼마를 투자할
 - 다만 daily rank correlation은 크지 않다. 즉, 유의성은 있지만 cross-sectional ranking power는 강하지 않다.
 - `image_factor_pc1`은 p-value는 유의하지 않지만 daily rank correlation이 가장 높아, portfolio ranking 신호 후보로는 따로 볼 가치가 있다.
 
-## 7. Ensemble에 추가했을 때의 결과
+## 8. Image factor를 ensemble에 추가했을 때의 결과
 
 기존 ensemble에 image factor를 추가해 보았다. aggregation은 기존 연구와 맞춰 날짜별 cross-sectional percentile rank 평균을 사용했다.
 
@@ -126,7 +191,7 @@ ODE 포트폴리오 최적화는 매 시점마다 각 ETF에 얼마를 투자할
 
 반면 `image_score`는 회귀 검정에서는 유의했지만, ensemble에 단순 rank 평균으로 섞었을 때는 성능이 떨어졌다. 이 부분이 중요하다. "factor로 유의하다"와 "portfolio score로 바로 좋다"는 같은 말이 아니다.
 
-## 8. 최종 해석
+## 9. 최종 해석
 
 이번 결과는 과장하면 안 된다.
 
@@ -140,7 +205,7 @@ ODE 포트폴리오 최적화는 매 시점마다 각 ETF에 얼마를 투자할
 
 "Jiang-style image transformation으로 만든 CNN score는 ETF rolling PCA 공통요인을 통제한 뒤에도 유의했다. 이는 가격 경로 이미지에 독립적인 정보가 있음을 시사한다. 다만 이 정보를 기존 ensemble에 단순히 더했을 때 portfolio 성능 개선은 제한적이므로, image factor는 ODE의 기본 mu 입력이라기보다 보조 신호 또는 ablation candidate로 사용하는 것이 적절하다."
 
-## 9. ODE와의 연결
+## 10. ODE와의 연결
 
 ODE portfolio optimizer는 나중에 자산별 기대수익 `mu(t)`, 공분산 `Sigma(t)`, 위험회피 또는 risk control 신호를 입력으로 받는다.
 
@@ -155,11 +220,11 @@ ODE portfolio optimizer는 나중에 자산별 기대수익 `mu(t)`, 공분산 `
 
 따라서 ODE 단계에서는 `ensemble_best`를 default mu로 두고, `ensemble_best + image_factor_pc1`을 비교 실험으로 넣는 것이 가장 안전하다. 이 비교를 통해 image path 정보가 실제 portfolio weight trajectory를 얼마나 바꾸는지 확인할 수 있다.
 
-## 10. 발표/업로드용 결론 문장
+## 11. 발표/업로드용 결론 문장
 
-이번 확장은 Jiang-style CNN을 단순 예측 모델이 아니라 ETF 가격 경로에서 추출한 image factor extractor로 재해석한 것이다. 60일 price image를 2D CNN에 넣고 output 직전 FC feature를 PCA factor로 변환한 뒤, rolling return PCA 공통요인을 통제해 검정했다. 결과적으로 `image_score`는 유의했지만, 이를 기존 ensemble에 단순 추가했을 때 portfolio 성능 개선은 제한적이었다. 따라서 현재 결론은 "이미지 경로 정보는 존재하지만, ODE 입력에서는 기본 mu를 대체하기보다 보조 신호와 ablation candidate로 쓰는 것이 적절하다"이다.
+이번 연구는 ETF ODE optimizer에 넣을 `mu(t)` 후보를 만들기 위해 CNN 계열 모델과 ensemble을 비교한 작업이다. 단일 CNN 하나가 압도적으로 이긴 것이 아니라, Logistic, CNN, LSTM/CNN-LSTM처럼 서로 다른 family를 조합할 때 신호의 안정성이 좋아졌다. 그중 Jiang-style image factor 챕터에서는 60일 price image를 2D CNN에 넣고 output 직전 FC feature를 PCA factor로 변환한 뒤, rolling return PCA 공통요인을 통제해 검정했다. 결과적으로 `image_score`는 유의했지만, 이를 기존 ensemble에 단순 추가했을 때 portfolio 성능 개선은 제한적이었다. 따라서 현재 결론은 `ensemble_best`를 ODE 기본 `mu(t)` 후보로 사용하고, image factor는 가격 경로 정보의 존재를 보여주는 보조 신호와 ablation candidate로 사용하는 것이다.
 
-## 11. 최종 폴더 구조
+## 12. 최종 폴더 구조
 
 최종 제출/발표에서 볼 핵심 폴더는 다음과 같다.
 
@@ -172,7 +237,7 @@ ODE portfolio optimizer는 나중에 자산별 기대수익 `mu(t)`, 공분산 `
 | `ode_inputs_cnn/image_factor_extension` | image factor 검정 및 ODE 후보 신호 |
 | `archive/model_exploration` | 최종에서 제외한 CNN 탐색 기록 |
 
-## 12. 관련 산출물
+## 13. 관련 산출물
 
 - `build_image_factor_extension.py`
 - `src/models/cnn.py`
