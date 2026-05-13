@@ -13,8 +13,9 @@
 3. 단일 모델보다 family 간 상관구조가 더 중요하다는 점을 확인한다.
 4. `ensemble_best`와 `ensemble_4family`를 ODE용 `mu(t)` 후보로 만든다.
 5. Jiang-style 2D CNN 내부 feature를 `image factor`로 추출해 추가 검정한다.
+6. 내 담당 범위에서는 Optimization 자체를 돌리지는 않고, ODE 팀이 쓸 수 있는 `mu(t)` 후보와 image factor signal을 넘긴다.
 
-최종 결론은 다음과 같다. **ODE 기본 `mu(t)` 후보는 아직 `ensemble_best`가 가장 안전하고, Jiang-style image factor는 독립적인 가격 경로 정보가 있음을 보여주는 보조 신호와 ablation candidate로 쓰는 것이 적절하다.**
+최종 결론은 다음과 같다. **내 역할은 Optimization이 아니라 이미지 기반 `mu(t)` 후보를 만드는 전 단계다. 우선순위는 image factor ablation이고, 그 다음은 PCA control 이후 유의성 검정과 `mu(t)` 시계열 추출이다.**
 
 ## 1. 연구의 출발점
 
@@ -36,7 +37,7 @@ ODE 포트폴리오 최적화는 매 시점마다 각 ETF에 얼마를 투자할
 |---|---|---|
 | Jiang-style price image | 가격 경로를 이미지로 변환해 CNN에 입력 | ETF OHLC 60일 window를 2D chart image로 변환 |
 | Image-based asset pricing / DV-style 해석 | 모델 출력을 단순 예측값이 아니라 characteristic/factor로 해석 | CNN 내부 FC feature를 image factor로 추출 |
-| ODE portfolio optimization | `mu(t)`, `Sigma(t)`, risk control을 이용해 동적 비중 결정 | ensemble score를 `mu(t)` 후보로 저장 |
+| ODE portfolio optimization | `mu(t)`, `Sigma(t)`, risk control을 이용해 동적 비중 결정 | 내가 만든 signal을 후속 Optimization 팀에 전달 |
 
 ### 2.1 Jiang-style price image
 
@@ -56,7 +57,7 @@ Image-based asset pricing 계열 연구의 핵심은 이미지 모델의 출력�
 
 ODE optimizer는 최종적으로 `mu(t)`와 `Sigma(t)`를 받아 portfolio weight path를 계산한다. 따라서 내 CNN 연구의 산출물은 단순 accuracy 표가 아니라, 나중에 ODE가 바로 읽을 수 있는 asset-date별 signal panel이어야 한다.
 
-그래서 최종 산출물은 `date`, `asset`, `model_name`, `signal_value` 형태로 저장했고, `ensemble_best`, `ensemble_4family`, image factor 후보를 모두 ODE 입력 후보로 넘길 수 있게 만들었다.
+다만 ODE solver를 실제로 돌리는 것은 내 역할이 아니다. 내 역할은 `date`, `asset`, `model_name`, `signal_value` 형태의 signal panel을 만들고, `ensemble_best`, `ensemble_4family`, image factor 후보를 후속 Optimization 단계에서 바로 사용할 수 있게 넘기는 것이다.
 
 ## 3. 전체 연구 흐름: 단일 모델에서 ensemble까지
 
@@ -209,7 +210,7 @@ ODE optimizer는 최종적으로 `mu(t)`와 `Sigma(t)`를 받아 portfolio weigh
 
 ODE portfolio optimizer는 나중에 자산별 기대수익 `mu(t)`, 공분산 `Sigma(t)`, 위험회피 또는 risk control 신호를 입력으로 받는다.
 
-이번 image factor 결과는 다음 방식으로 연결할 수 있다.
+내 역할은 여기서 optimizer를 직접 구현하는 것이 아니라, optimizer가 사용할 수 있는 `mu(t)` 후보와 보조 image factor signal을 만드는 것이다. 이번 image factor 결과는 다음 방식으로 연결할 수 있다.
 
 | 용도 | 추천 신호 | 이유 |
 |---|---|---|
@@ -218,11 +219,11 @@ ODE portfolio optimizer는 나중에 자산별 기대수익 `mu(t)`, 공분산 `
 | Image factor ablation | `ensemble_best + image_factor_pc1` | rank corr 개선 추세는 있으나 CI는 불확실 |
 | 보조 path signal | `image_score`, `image_factor_pc1~3` | PCA control 이후 path 정보 검정에 사용 가능 |
 
-따라서 ODE 단계에서는 `ensemble_best`를 default mu로 두고, `ensemble_best + image_factor_pc1`을 비교 실험으로 넣는 것이 가장 안전하다. 이 비교를 통해 image path 정보가 실제 portfolio weight trajectory를 얼마나 바꾸는지 확인할 수 있다.
+따라서 후속 ODE 단계에서는 `ensemble_best`를 default mu로 두고, `ensemble_best + image_factor_pc1`을 비교 실험으로 넣는 것이 가장 안전하다. 이 비교를 통해 image path 정보가 실제 portfolio weight trajectory를 얼마나 바꾸는지는 Optimization 담당 단계에서 확인하면 된다.
 
 ## 11. 발표/업로드용 결론 문장
 
-이번 연구는 ETF ODE optimizer에 넣을 `mu(t)` 후보를 만들기 위해 CNN 계열 모델과 ensemble을 비교한 작업이다. 단일 CNN 하나가 압도적으로 이긴 것이 아니라, Logistic, CNN, LSTM/CNN-LSTM처럼 서로 다른 family를 조합할 때 신호의 안정성이 좋아졌다. 그중 Jiang-style image factor 챕터에서는 60일 price image를 2D CNN에 넣고 output 직전 FC feature를 PCA factor로 변환한 뒤, rolling return PCA 공통요인을 통제해 검정했다. 결과적으로 `image_score`는 유의했지만, 이를 기존 ensemble에 단순 추가했을 때 portfolio 성능 개선은 제한적이었다. 따라서 현재 결론은 `ensemble_best`를 ODE 기본 `mu(t)` 후보로 사용하고, image factor는 가격 경로 정보의 존재를 보여주는 보조 신호와 ablation candidate로 사용하는 것이다.
+이번 연구는 ETF ODE optimizer에 넘길 `mu(t)` 후보를 만들기 위해 CNN 계열 모델과 ensemble을 비교한 작업이다. 단일 CNN 하나가 압도적으로 이긴 것이 아니라, Logistic, CNN, LSTM/CNN-LSTM처럼 서로 다른 family를 조합할 때 신호의 안정성이 좋아졌다. 그중 내 다음 역할은 Jiang-style image factor ablation이다. 60일 price image를 2D CNN에 넣고 output 직전 FC feature를 PCA factor로 변환한 뒤, rolling return PCA 공통요인을 통제해 검정했다. 결과적으로 `image_score`는 유의했지만, 어떤 이미지 구성 요소가 정보성을 만드는지는 아직 분해가 필요하다. 따라서 다음 단계는 MA선, 거래량, OHLC 전체, close-only, high-low range 등 이미지 구성별 ablation을 통해 가격 path 정보의 출처를 확인하는 것이다.
 
 ## 12. 최종 폴더 구조
 
@@ -247,11 +248,18 @@ ODE portfolio optimizer는 나중에 자산별 기대수익 `mu(t)`, 공분산 `
 - `ode_inputs_cnn/image_factor_extension/image_factor_signals.csv`
 - `ode_inputs_cnn/image_factor_extension/ode_mu_candidate_signals.csv`
 
-## 14. 앞으로 할 일
+## 14. 내 담당 범위와 우선순위
 
-현재 sprint2 폴더는 **이미지 팩터가 실제로 의미 있는지 확인한 실험 단계**로 보면 된다. 앞으로의 연구는 크게 두 축으로 이어진다.
+현재 sprint2 폴더는 **이미지 팩터가 실제로 의미 있는지 확인한 실험 단계**로 보면 된다. 앞으로 내 담당 범위는 Optimization을 제외한 앞단이다. 우선순위는 다음과 같다.
 
-### 14.1 Image Factor 확장
+| 우선순위 | 작업 | 내 역할 여부 |
+|---|---|---|
+| 1 | Image factor ablation | 담당 |
+| 2 | PCA control 이후 factor 유의성 검정 | 담당 |
+| 3 | 유효한 factor 기반 `mu(t)` 후보 시계열 추출 | 담당 |
+| 4 | ODE solver 및 portfolio optimization | 담당 아님, 후속 단계 |
+
+### 14.1 1순위: Image Factor Ablation
 
 원래 주식 데이터라면 CAPM, FF3, FF4 같은 factor model에 image factor를 추가해서 유의성을 확인하는 방식이 자연스럽다. 하지만 이번 데이터는 개별 주식이 아니라 7개 ETF/지수성 자산이다. 이 구조에서는 FF factor를 그대로 적용하기 어렵다.
 
@@ -266,13 +274,7 @@ ETF return에서 공통요인 PCA 추출
 
 이 검정에서 유효성이 있으면, 단순히 과거 수익률 평균이 아니라 **가격 path 정보 자체가 의미 있는 신호**라고 해석할 수 있다.
 
-앞으로 더 해야 할 일은 다음과 같다.
-
-- 이미지 생성 방식 자체를 다양화한다.
-- ETF 구조에 맞는 factor-model-style 검정을 더 정교화한다.
-- CAPM/FF3/FF4를 직접 쓰기 어려운 이유를 명확히 설명한다.
-- PCA common factor 통제 후에도 image factor가 유의한지 반복 검증한다.
-- 유의한 image factor를 바탕으로 `mu(t)` 시계열을 더 안정적으로 추출한다.
+다만 지금까지는 image factor를 하나의 큰 묶음으로 봤다. 다음 단계에서는 이미지 구성을 나눠서 어떤 요소가 정보성을 만드는지 확인해야 한다.
 
 이미지 생성 방식의 ablation 후보는 다음과 같다.
 
@@ -286,7 +288,55 @@ ETF return에서 공통요인 PCA 추출
 
 이 ablation의 목적은 단순히 CNN 입력을 늘리는 것이 아니라, **과거 가격 path의 어떤 시각적 요소가 실제로 정보성을 갖는지 분해하는 것**이다.
 
-### 14.2 Optimization 확장
+실험 순서는 다음처럼 잡는 것이 좋다.
+
+1. `close_only`: 종가 path만 이미지화한다.
+2. `ohlc_full`: open/high/low/close 캔들 정보를 모두 넣는다.
+3. `ohlc_ma`: OHLC 이미지에 moving average 선을 추가한다.
+4. `ohlc_volume`: OHLC 이미지에 volume bar를 추가한다.
+5. `ohlc_ma_volume`: MA선과 거래량을 모두 포함한다.
+6. `high_low_range`: high-low range를 강조해 변동성/꼬리 정보를 본다.
+
+각 ablation은 같은 train/validation/test split, 같은 lookback/horizon, 같은 `cnn_2d_residual_small` 구조로 비교해야 한다. 그래야 성능 차이가 모델 구조가 아니라 이미지 구성 차이에서 나온다고 해석할 수 있다.
+
+평가 기준은 다음 네 가지다.
+
+| 평가 | 목적 |
+|---|---|
+| `image_score` rank correlation | 예측 ranking 정보 확인 |
+| PCA control 이후 t-stat / p-value | 공통요인 통제 후 factor 유의성 확인 |
+| delta R2 | image factor 추가 설명력 확인 |
+| ensemble 추가 성능 | ODE용 `mu(t)` 후보로 쓸 가치 확인 |
+
+### 14.2 2순위: Factor 유의성 검정 정교화
+
+Image factor ablation에서 유망한 이미지 구성이 나오면, 그 factor가 단순 시장 공통요인을 잡은 것인지 path 고유 정보를 잡은 것인지 검정해야 한다.
+
+내가 할 검정은 다음 방향이다.
+
+- ETF return에서 rolling PCA common factor를 뽑는다.
+- 각 asset-date에 PC loading을 붙인다.
+- `future_return ~ PCA controls + image factor` 회귀를 돌린다.
+- date-clustered robust SE로 t-stat과 p-value를 확인한다.
+- CAPM/FF3/FF4를 직접 쓰지 않는 이유를 ETF/지수 자산 구조 관점에서 설명한다.
+
+### 14.3 3순위: `mu(t)` 후보 시계열 추출
+
+유의한 image factor가 확인되면, 이를 후속 ODE 단계에 넘길 수 있는 `mu(t)` 후보로 정리한다.
+
+내가 넘겨야 하는 형식은 다음과 같다.
+
+| column | 의미 |
+|---|---|
+| `date` | signal date |
+| `asset` | ETF asset |
+| `model_name` | image factor 또는 ensemble 이름 |
+| `signal_value` | raw score 또는 rank-normalized score |
+| `future_return` | OOS 검증용 realized horizon return |
+
+이 단계까지가 내 담당 범위다.
+
+### 14.4 담당하지 않는 범위: Optimization
 
 Image Factor 단계에서 만든 시계열 예측 신호는 이후 ODE portfolio optimization의 입력으로 들어간다.
 
@@ -310,7 +360,16 @@ Optimization 단계의 핵심은 다음과 같다.
 - `ensemble_4family` 기반 ODE
 - image factor를 추가한 ODE ablation
 
-따라서 전체 연구의 최종 흐름은 다음과 같다.
+다만 아래 작업은 내 담당이 아니라 후속 Optimization 단계다.
+
+- risk aversion 값 선택
+- ODE solver 구현
+- 자산 class 제약 반영
+- 6:4 포트폴리오와 성과 비교
+- Mean-variance portfolio와 성과 비교
+- realized PnL, turnover, Sharpe 비교
+
+전체 연구의 최종 흐름은 다음과 같다.
 
 ```text
 가격 path image
@@ -321,4 +380,4 @@ Optimization 단계의 핵심은 다음과 같다.
     -> 6:4, Mean-variance와 성과 비교
 ```
 
-즉 sprint2는 최종 optimization 자체가 아니라, 그 전에 필요한 **이미지 기반 `mu(t)` 후보를 만들고 검증한 단계**다.
+즉 내 역할은 최종 optimization 자체가 아니라, 그 전에 필요한 **이미지 기반 factor와 `mu(t)` 후보를 만들고 검증하는 단계**다.
