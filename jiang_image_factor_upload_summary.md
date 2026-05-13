@@ -246,3 +246,79 @@ ODE portfolio optimizer는 나중에 자산별 기대수익 `mu(t)`, 공분산 `
 - `ode_inputs_cnn/image_factor_extension/ensemble_image_factor_search.csv`
 - `ode_inputs_cnn/image_factor_extension/image_factor_signals.csv`
 - `ode_inputs_cnn/image_factor_extension/ode_mu_candidate_signals.csv`
+
+## 14. 앞으로 할 일
+
+현재 sprint2 폴더는 **이미지 팩터가 실제로 의미 있는지 확인한 실험 단계**로 보면 된다. 앞으로의 연구는 크게 두 축으로 이어진다.
+
+### 14.1 Image Factor 확장
+
+원래 주식 데이터라면 CAPM, FF3, FF4 같은 factor model에 image factor를 추가해서 유의성을 확인하는 방식이 자연스럽다. 하지만 이번 데이터는 개별 주식이 아니라 7개 ETF/지수성 자산이다. 이 구조에서는 FF factor를 그대로 적용하기 어렵다.
+
+그래서 현재 sprint2에서는 대체 방법으로 rolling PCA control을 사용했다.
+
+```text
+ETF return에서 공통요인 PCA 추출
+    -> PC loading 1~3을 control로 사용
+    -> 여기에 CNN image feature 추가
+    -> image factor가 유의한지 확인
+```
+
+이 검정에서 유효성이 있으면, 단순히 과거 수익률 평균이 아니라 **가격 path 정보 자체가 의미 있는 신호**라고 해석할 수 있다.
+
+앞으로 더 해야 할 일은 다음과 같다.
+
+- 이미지 생성 방식 자체를 다양화한다.
+- ETF 구조에 맞는 factor-model-style 검정을 더 정교화한다.
+- CAPM/FF3/FF4를 직접 쓰기 어려운 이유를 명확히 설명한다.
+- PCA common factor 통제 후에도 image factor가 유의한지 반복 검증한다.
+- 유의한 image factor를 바탕으로 `mu(t)` 시계열을 더 안정적으로 추출한다.
+
+이미지 생성 방식의 ablation 후보는 다음과 같다.
+
+| 후보 | 목적 |
+|---|---|
+| MA선 포함 vs 제외 | 추세선 정보가 추가 설명력을 갖는지 확인 |
+| 거래량 포함 vs 제외 | volume path가 가격 path 외 정보를 주는지 확인 |
+| OHLC 전체 사용 | 캔들 구조의 고가/저가/시가/종가 정보 반영 |
+| close-only 이미지 | 단순 종가 path만으로도 충분한지 비교 |
+| high-low range 강조 | 변동성/꼬리 정보가 factor로 유효한지 확인 |
+
+이 ablation의 목적은 단순히 CNN 입력을 늘리는 것이 아니라, **과거 가격 path의 어떤 시각적 요소가 실제로 정보성을 갖는지 분해하는 것**이다.
+
+### 14.2 Optimization 확장
+
+Image Factor 단계에서 만든 시계열 예측 신호는 이후 ODE portfolio optimization의 입력으로 들어간다.
+
+Optimization 단계의 핵심은 다음과 같다.
+
+| 입력 | 생성 방식 |
+|---|---|
+| `mu(t)` | CNN/ensemble/image factor 기반 예측 신호 |
+| `Sigma(t)` | 과거 ETF return으로 rolling covariance 추정 |
+| risk aversion | 초기에는 임의의 고정값 또는 단순 schedule 사용 |
+| asset class constraint | 실제 기금 운용처럼 자산 class별 제약 적용 가능 |
+
+이후에는 portfolio 성과를 비교해야 한다.
+
+비교 대상은 다음과 같다.
+
+- 단순 6:4 포트폴리오
+- Mean-variance portfolio
+- ODE dynamic portfolio
+- `ensemble_best` 기반 ODE
+- `ensemble_4family` 기반 ODE
+- image factor를 추가한 ODE ablation
+
+따라서 전체 연구의 최종 흐름은 다음과 같다.
+
+```text
+가격 path image
+    -> CNN / image factor
+    -> mu(t) 시계열 추출
+    -> Sigma(t), risk aversion과 결합
+    -> ODE portfolio optimization
+    -> 6:4, Mean-variance와 성과 비교
+```
+
+즉 sprint2는 최종 optimization 자체가 아니라, 그 전에 필요한 **이미지 기반 `mu(t)` 후보를 만들고 검증한 단계**다.
