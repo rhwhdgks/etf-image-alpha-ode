@@ -99,11 +99,15 @@ def _orient_component(values: np.ndarray, target: np.ndarray) -> float:
     return 1.0
 
 
-def build_image_factor_panel(config: PipelineConfig, max_folds: int | None = None) -> pd.DataFrame:
+def build_image_factor_panel(
+    config: PipelineConfig,
+    max_folds: int | None = None,
+    fold_dates: list[pd.Timestamp] | None = None,
+) -> pd.DataFrame:
     set_global_seed(config.seed)
     bundle, prep = _load_sample_bundle(config)
     metadata = bundle.metadata.copy()
-    unique_dates = sorted(metadata["date"].drop_duplicates().tolist())
+    unique_dates = sorted(fold_dates if fold_dates is not None else metadata["date"].drop_duplicates().tolist())
     folds = generate_walkforward_folds(unique_dates, config)
     if max_folds is not None:
         folds = folds[:max_folds]
@@ -115,7 +119,8 @@ def build_image_factor_panel(config: PipelineConfig, max_folds: int | None = Non
     rows = []
 
     print(
-        f"Image factor extraction: samples={prep['n_samples']} image_shape={features.shape[1:]} folds={len(folds)}"
+        f"Image factor extraction: samples={prep['n_samples']} image_shape={features.shape[1:]} folds={len(folds)}",
+        flush=True,
     )
 
     for fold_idx, fold in enumerate(folds):
@@ -131,7 +136,8 @@ def build_image_factor_panel(config: PipelineConfig, max_folds: int | None = Non
         print(
             f"  fold {fold_idx + 1:2d}/{len(folds)}: "
             f"train={train_mask.sum():5d} val={val_mask.sum():4d} test={test_mask.sum():4d} "
-            f"test_start={test_dates.min().strftime('%Y-%m-%d')}"
+            f"test_start={test_dates.min().strftime('%Y-%m-%d')}",
+            flush=True,
         )
 
         model = fit_torch_model(
@@ -431,14 +437,18 @@ def run_ensemble_extension(
     return pd.DataFrame(rows).sort_values(["rank_corr", "top_k_sharpe"], ascending=[False, False])
 
 
-def export_signal_panels(out_dir: Path, image_panel: pd.DataFrame) -> None:
+def export_signal_panels(
+    out_dir: Path,
+    image_panel: pd.DataFrame,
+    model_prefix: str = "cnn_2d_residual_small",
+) -> None:
     panel = image_panel.copy()
     panel["date"] = _date_norm(panel["date"])
 
     factor_rows = []
     for factor in FACTOR_COLUMNS:
         signal = panel[["date", "asset", "future_return", "fold"]].copy()
-        signal["model_name"] = f"cnn_2d_residual_small_{factor}"
+        signal["model_name"] = f"{model_prefix}_{factor}"
         signal["signal_value"] = panel[factor].astype(float).to_numpy()
         signal["confidence"] = np.nan
         factor_rows.append(signal)
