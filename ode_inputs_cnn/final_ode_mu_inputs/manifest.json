@@ -1,0 +1,32 @@
+{
+  "recommended_input": "mu_image_factor_rank",
+  "source_signals": "ode_inputs_cnn/image_factor_ablation/ohlc_ma_volume/ode_mu_candidate_signals.csv",
+  "source_performance": "ode_inputs_cnn/image_factor_ablation/ablation_ensemble_search.csv",
+  "output_dir": "ode_inputs_cnn/final_ode_mu_inputs",
+  "lookback": 60,
+  "horizon": 20,
+  "chart_variant": "ohlc_ma_volume",
+  "signal_type": "cross_sectional_centered_rank",
+  "inputs": {
+    "mu_sharpe_baseline": {
+      "source_model_name": "ensemble_best",
+      "role": "Sharpe-stable baseline from prior ensemble sprint"
+    },
+    "mu_rank_baseline": {
+      "source_model_name": "ensemble_4family",
+      "role": "Rank-correlation baseline before image-factor ablation add-on"
+    },
+    "mu_image_factor_rank": {
+      "source_model_name": "ensemble_4family+image_factor_pc1",
+      "role": "Recommended ranking-improved input using full OHLC+MA+Volume image factor PC1"
+    },
+    "mu_image_factor_balanced": {
+      "source_model_name": "ensemble_best+image_factor_pc1",
+      "role": "Secondary image-factor input with higher Sharpe than the 4-family add-on"
+    }
+  },
+  "n_rows_long": 80640,
+  "n_rows_selected": 20160,
+  "n_dates": 2880,
+  "n_assets": 7
+}

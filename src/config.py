@@ -15,6 +15,7 @@ class PipelineConfig:
     enabled_models: list[str] = field(default_factory=list)
     include_moving_average: bool = True
     include_volume: bool = True
+    chart_variant: str = "ohlc_ma_volume"
     ma_window: int | None = None
     image_height: int = 64
     train_frac: float = 0.70

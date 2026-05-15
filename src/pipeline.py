@@ -154,6 +154,7 @@ def build_samples(common_panel: pd.DataFrame, config: PipelineConfig) -> tuple[S
                 image_height=config.image_height,
                 include_moving_average=config.include_moving_average,
                 include_volume=config.include_volume,
+                chart_variant=config.chart_variant,
             )
             chart_images.append(image_array)
 
@@ -196,6 +197,7 @@ def build_samples(common_panel: pd.DataFrame, config: PipelineConfig) -> tuple[S
         "target_description": target_metadata["description"],
         "include_moving_average": config.include_moving_average,
         "include_volume": config.include_volume,
+        "chart_variant": config.chart_variant,
         "ma_window": config.resolved_ma_window if config.include_moving_average else None,
         "n_samples": int(len(metadata)),
         "sequence_shape": list(bundle.image_sequences.shape[1:]),
