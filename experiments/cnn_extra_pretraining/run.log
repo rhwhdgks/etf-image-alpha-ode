@@ -1,0 +1,30 @@
+Main samples: 24101 dates=3443
+First OOS test date: 2014-09-24
+Extra ETF pretrain cutoff: 2014-09-23
+Pretraining on extra ETFs: train=61968 val=3480 image_shape=(1, 64, 180)
+Fine-tuning on original 7 ETF universe: folds=48
+  fold  1/48: train= 3500 val= 420 test= 420 test=2014-09-24..2014-12-17
+  fold  2/48: train= 3920 val= 420 test= 420 test=2014-12-18..2015-03-17
+  fold  3/48: train= 4340 val= 420 test= 420 test=2015-03-18..2015-06-11
+  fold  4/48: train= 4760 val= 420 test= 420 test=2015-06-12..2015-09-04
+  fold  5/48: train= 5180 val= 420 test= 420 test=2015-09-08..2015-12-01
+  fold  6/48: train= 5600 val= 420 test= 420 test=2015-12-02..2016-02-29
+  fold  7/48: train= 6020 val= 420 test= 420 test=2016-03-01..2016-05-24
+  fold  8/48: train= 6440 val= 420 test= 420 test=2016-05-25..2016-08-18
+  fold  9/48: train= 6860 val= 420 test= 420 test=2016-08-19..2016-11-11
+  fold 10/48: train= 7280 val= 420 test= 420 test=2016-11-14..2017-02-09
+  fold 11/48: train= 7700 val= 420 test= 420 test=2017-02-10..2017-05-08
+  fold 12/48: train= 8120 val= 420 test= 420 test=2017-05-09..2017-08-02
+  fold 13/48: train= 8540 val= 420 test= 420 test=2017-08-03..2017-10-26
+  fold 14/48: train= 8960 val= 420 test= 420 test=2017-10-27..2018-01-24
+  fold 15/48: train= 9380 val= 420 test= 420 test=2018-01-25..2018-04-20
+  fold 16/48: train= 9800 val= 420 test= 420 test=2018-04-23..2018-07-17
+  fold 17/48: train=10220 val= 420 test= 420 test=2018-07-18..2018-10-10
+  fold 18/48: train=10640 val= 420 test= 420 test=2018-10-11..2019-01-08
+  fold 19/48: train=11060 val= 420 test= 420 test=2019-01-09..2019-04-04
+  fold 20/48: train=11480 val= 420 test= 420 test=2019-04-05..2019-07-01
+  fold 21/48: train=11900 val= 420 test= 420 test=2019-07-02..2019-09-25
+  fold 22/48: train=12320 val= 420 test= 420 test=2019-09-26..2019-12-19
+  fold 23/48: train=12740 val= 420 test= 420 test=2019-12-20..2020-03-18
+  fold 24/48: train=13160 val= 420 test= 420 test=2020-03-19..2020-06-12
+  fold 25/48: train=13580 val= 420 test= 420 test=2020-06-15..2020-09-08

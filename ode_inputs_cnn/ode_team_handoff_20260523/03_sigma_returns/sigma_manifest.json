@@ -1,0 +1,37 @@
+{
+  "source_bundle": "ode_inputs_cnn/ensemble_best/ode_bundle.csv",
+  "source_returns": "ode_inputs_cnn/returns_daily.csv",
+  "sigma_window": 60,
+  "scale": "daily log-return covariance",
+  "date_start": "2014-09-24",
+  "date_end": "2026-03-09",
+  "n_dates": 2880,
+  "n_assets": 7,
+  "assets": [
+    "alternative",
+    "corp_bond_ig",
+    "developed_equity",
+    "emerging_equity",
+    "korea_equity",
+    "short_treasury",
+    "treasury_7_10y"
+  ],
+  "wide_file": "sigma_wide.csv",
+  "long_file": "sigma_long.csv",
+  "returns_file": "returns_for_ode.csv",
+  "min_variance": 3.6975567867996944e-08,
+  "max_variance": 0.002095611484172,
+  "shrunk_sigma": {
+    "method": "Ledoit-Wolf shrinkage to scaled-identity target, per 60-day window",
+    "reproducing_script": "build_sigma_shrunk.py",
+    "wide_file": "sigma_shrunk_wide.csv",
+    "long_file": "sigma_shrunk_long.csv",
+    "report": "sigma_shrinkage_report.md",
+    "diagnostics": "sigma_shrinkage_diagnostics.csv",
+    "condition_number": {
+      "sample":  {"median": 2409, "p95": 10644, "max": 18444, "dates_over_1e4": 176},
+      "shrunk":  {"median": 64,   "p95": 142,   "max": 206,   "dates_over_1e4": 0}
+    },
+    "recommendation": "Use sigma_shrunk_wide.csv as the default Sigma(t) input. With constant gamma the ODE equilibrium is w* = (alpha/2 gamma_0) Sigma^-1 mu, so the inverse must be stable; shrinkage removes all 176 dates with condition number > 1e4. The plain sample-covariance sigma_wide.csv is retained for A/B comparison."
+  }
+}

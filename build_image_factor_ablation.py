@@ -83,6 +83,7 @@ def _variant_config(args: argparse.Namespace, variant: str, output_dir: Path) ->
         learning_rate=args.learning_rate,
         top_k=args.top_k,
         seed=args.seed,
+        strict_window_ma=args.strict_window_ma,
         sample_preview_count=0,
     )
 
@@ -165,6 +166,7 @@ def _build_variant_report(
     insert = (
         f"- Chart variant: `{variant}`\n"
         f"- Rendered MA: `{config.include_moving_average}`\n"
+        f"- Strict window MA: `{config.strict_window_ma}`\n"
         f"- Rendered volume: `{config.include_volume}`"
     )
     return base.replace("## Summary\n", f"## Summary\n{insert}\n", 1)
@@ -197,6 +199,7 @@ def _build_ablation_report(
         "- Optimization is excluded in this run.",
         "- Model architecture is fixed to `cnn_2d_residual_small`; only chart rendering components vary.",
         f"- Lookback/horizon: `{args.lookback}/{args.horizon}`",
+        f"- Strict window MA: `{args.strict_window_ma}`",
         f"- CNN epochs/patience: `{args.cnn_epochs}/{args.patience}`",
         "",
         "## Main Result",
@@ -335,6 +338,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--bootstrap-samples", type=int, default=10000)
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--max-folds", type=int, default=None, help="debug/smoke-test option")
+    p.add_argument(
+        "--strict-window-ma",
+        action="store_true",
+        help="compute MA inside each rendered lookback window only, avoiding pre-window history",
+    )
     p.add_argument("--force", action="store_true", help="recompute variants even if completed outputs exist")
     return p
 

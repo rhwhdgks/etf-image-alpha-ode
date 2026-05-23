@@ -503,6 +503,7 @@ def build_report(
         "## Summary",
         f"- Extractor: `{config.enabled_models[0]}`",
         f"- Lookback/horizon: `{config.lookback}/{config.horizon}`",
+        f"- Strict window MA: `{config.strict_window_ma}`",
         f"- OOS rows: `{len(image_panel)}` across `{image_panel['date'].nunique()}` dates",
         f"- Rolling PCA controls: `{len(controls)}` asset-date rows",
         f"- Best factor by p-value: `{best_factor['factor_name']}` "
@@ -554,6 +555,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--bootstrap-samples", type=int, default=10000)
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--max-folds", type=int, default=None, help="debug/smoke-test option")
+    p.add_argument(
+        "--strict-window-ma",
+        action="store_true",
+        help="compute MA inside each rendered lookback window only, avoiding pre-window history",
+    )
     return p
 
 
@@ -581,6 +587,7 @@ def main() -> None:
         learning_rate=args.learning_rate,
         top_k=args.top_k,
         seed=args.seed,
+        strict_window_ma=args.strict_window_ma,
         sample_preview_count=0,
     )
 

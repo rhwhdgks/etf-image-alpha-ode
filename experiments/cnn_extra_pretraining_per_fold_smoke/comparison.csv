@@ -1,0 +1,2 @@
+rmse,mae,future_return_rank_correlation,top_k_cumulative_return,top_k_sharpe,top_k_hit_rate,top_bottom_spread_mean,turnover,n_rebalances,model_name,n_dates,n_rows,n_folds
+0.029532495899032594,0.02117175105321611,-0.45833333333333337,-0.07945567344495819,-3.044906751522883,0.3333333333333333,-0.04035954748063386,0.5,3.0,cnn_2d_residual_small_extra_pretrained,60,420,1

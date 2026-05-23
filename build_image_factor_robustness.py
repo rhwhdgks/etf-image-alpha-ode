@@ -79,6 +79,7 @@ def _config(args: argparse.Namespace, lookback: int, horizon: int, out_dir: Path
         learning_rate=args.learning_rate,
         top_k=args.top_k,
         seed=args.seed,
+        strict_window_ma=args.strict_window_ma,
         sample_preview_count=0,
     )
 
@@ -143,6 +144,7 @@ def build_report(args: argparse.Namespace, summary: pd.DataFrame, significance: 
         "",
         f"- Chart variant fixed to `{CHART_VARIANT}`.",
         "- Model fixed to `cnn_2d_residual_small`.",
+        f"- Strict window MA: `{args.strict_window_ma}`.",
         "- This is a robustness screen for image-factor significance, not an ODE backtest.",
         f"- Max folds: `{args.max_folds}`",
         f"- CNN epochs / patience: `{args.cnn_epochs}/{args.patience}`",
@@ -197,6 +199,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--rolling-pca-window", type=int, default=252)
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--max-folds", type=int, default=6)
+    p.add_argument(
+        "--strict-window-ma",
+        action="store_true",
+        help="compute MA inside each rendered lookback window only, avoiding pre-window history",
+    )
     return p
 
 

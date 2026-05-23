@@ -57,14 +57,29 @@ def calibrate_mu_expanding(mu_df: pd.DataFrame, horizon: int) -> pd.DataFrame:
       3. Divide by horizon to convert horizon-return → daily.
 
     The 0.4 shrinkage factor is conservative: assumes alpha ≈ 40% of total return vol.
+
+    Horizon-embargo: `future_return` at date s is a horizon-day forward return and
+    is only realised at index(s) + horizon. When calibrating date at index i, the
+    expanding return pool only includes dates whose forward window has fully closed
+    (index(s) + horizon <= i), so no not-yet-realised return leaks into ret_std.
     """
     mu_df = mu_df.sort_values("date").reset_index(drop=True)
     unique_dates = sorted(mu_df["date"].unique())
+    # future_return per date, indexed by position in unique_dates
+    returns_by_date = {
+        date: mu_df.loc[mu_df["date"] == date, "future_return"].tolist()
+        for date in unique_dates
+    }
 
     expanding_returns: list[float] = []
     calibrated: list[pd.DataFrame] = []
 
-    for date in unique_dates:
+    for i, date in enumerate(unique_dates):
+        # release the date whose horizon window just closed at index i
+        cutoff_idx = i - horizon
+        if cutoff_idx >= 0:
+            expanding_returns.extend(returns_by_date[unique_dates[cutoff_idx]])
+
         mask = mu_df["date"] == date
         rows = mu_df[mask].copy()
         signals = rows["signal_value"].values.astype(float)
@@ -84,8 +99,6 @@ def calibrate_mu_expanding(mu_df: pd.DataFrame, horizon: int) -> pd.DataFrame:
         rows["mu_hat_horizon"] = mu_horizon
         rows["mu_hat_daily"] = mu_horizon / horizon
         calibrated.append(rows)
-
-        expanding_returns.extend(rows["future_return"].tolist())
 
     return pd.concat(calibrated, ignore_index=True)
 
