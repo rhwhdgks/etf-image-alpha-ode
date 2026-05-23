@@ -1,0 +1,2 @@
+test_family,n_tests,raw_p_lt_0.05,bonferroni_p_lt_0.05,fdr_bh_p_lt_0.05,best_raw_test,best_raw_p_value,best_fdr_p_value
+ablation_6_variants_x_4_factors_plus_strict_window_ma,28,18,12,17,ohlc_ma::image_score,6.072919944699606e-13,1.7004175845158898e-11

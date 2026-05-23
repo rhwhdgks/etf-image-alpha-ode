@@ -1,0 +1,5 @@
+variant,median,p95,max,dates_cond_gt_1e4
+sample (60d),2409,10643,18443,176
+shrunk (LW),64,142,205,0
+ewma (lambda=0.94),2588,10901,29436,220
+multiwindow (60d+120d),2227,9884,15025,138

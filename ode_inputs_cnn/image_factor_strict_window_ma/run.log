@@ -1,0 +1,67 @@
+Image factor extraction: samples=24101 image_shape=(1, 64, 180) folds=48
+  fold  1/48: train= 3500 val= 420 test= 420 test_start=2014-09-24
+  fold  2/48: train= 3920 val= 420 test= 420 test_start=2014-12-18
+  fold  3/48: train= 4340 val= 420 test= 420 test_start=2015-03-18
+  fold  4/48: train= 4760 val= 420 test= 420 test_start=2015-06-12
+  fold  5/48: train= 5180 val= 420 test= 420 test_start=2015-09-08
+  fold  6/48: train= 5600 val= 420 test= 420 test_start=2015-12-02
+  fold  7/48: train= 6020 val= 420 test= 420 test_start=2016-03-01
+  fold  8/48: train= 6440 val= 420 test= 420 test_start=2016-05-25
+  fold  9/48: train= 6860 val= 420 test= 420 test_start=2016-08-19
+  fold 10/48: train= 7280 val= 420 test= 420 test_start=2016-11-14
+  fold 11/48: train= 7700 val= 420 test= 420 test_start=2017-02-10
+  fold 12/48: train= 8120 val= 420 test= 420 test_start=2017-05-09
+  fold 13/48: train= 8540 val= 420 test= 420 test_start=2017-08-03
+  fold 14/48: train= 8960 val= 420 test= 420 test_start=2017-10-27
+  fold 15/48: train= 9380 val= 420 test= 420 test_start=2018-01-25
+  fold 16/48: train= 9800 val= 420 test= 420 test_start=2018-04-23
+  fold 17/48: train=10220 val= 420 test= 420 test_start=2018-07-18
+  fold 18/48: train=10640 val= 420 test= 420 test_start=2018-10-11
+  fold 19/48: train=11060 val= 420 test= 420 test_start=2019-01-09
+  fold 20/48: train=11480 val= 420 test= 420 test_start=2019-04-05
+  fold 21/48: train=11900 val= 420 test= 420 test_start=2019-07-02
+  fold 22/48: train=12320 val= 420 test= 420 test_start=2019-09-26
+  fold 23/48: train=12740 val= 420 test= 420 test_start=2019-12-20
+  fold 24/48: train=13160 val= 420 test= 420 test_start=2020-03-19
+  fold 25/48: train=13580 val= 420 test= 420 test_start=2020-06-15
+  fold 26/48: train=14000 val= 420 test= 420 test_start=2020-09-09
+  fold 27/48: train=14420 val= 420 test= 420 test_start=2020-12-03
+  fold 28/48: train=14840 val= 420 test= 420 test_start=2021-03-03
+  fold 29/48: train=15260 val= 420 test= 420 test_start=2021-05-27
+  fold 30/48: train=15680 val= 420 test= 420 test_start=2021-08-23
+  fold 31/48: train=16100 val= 420 test= 420 test_start=2021-11-16
+  fold 32/48: train=16520 val= 420 test= 420 test_start=2022-02-11
+  fold 33/48: train=16940 val= 420 test= 420 test_start=2022-05-10
+  fold 34/48: train=17360 val= 420 test= 420 test_start=2022-08-05
+  fold 35/48: train=17780 val= 420 test= 420 test_start=2022-10-31
+  fold 36/48: train=18200 val= 420 test= 420 test_start=2023-01-27
+  fold 37/48: train=18620 val= 420 test= 420 test_start=2023-04-25
+  fold 38/48: train=19040 val= 420 test= 420 test_start=2023-07-21
+  fold 39/48: train=19460 val= 420 test= 420 test_start=2023-10-16
+  fold 40/48: train=19880 val= 420 test= 420 test_start=2024-01-11
+  fold 41/48: train=20300 val= 420 test= 420 test_start=2024-04-09
+  fold 42/48: train=20720 val= 420 test= 420 test_start=2024-07-05
+  fold 43/48: train=21140 val= 420 test= 420 test_start=2024-09-30
+  fold 44/48: train=21560 val= 420 test= 420 test_start=2024-12-24
+  fold 45/48: train=21980 val= 420 test= 420 test_start=2025-03-25
+  fold 46/48: train=22400 val= 420 test= 420 test_start=2025-06-20
+  fold 47/48: train=22820 val= 420 test= 420 test_start=2025-09-16
+  fold 48/48: train=23240 val= 420 test= 420 test_start=2025-12-10
+
+=== Image Factor Extension ===
+     factor_name  coefficient  std_error_cluster_date    t_stat  p_value  base_r2  augmented_r2  delta_r2  daily_rank_correlation  n_obs  n_dates
+image_factor_pc3     0.000599                0.000385  1.557066 0.119565 0.004207      0.004614  0.000407               -0.027908  20160     2880
+     image_score    -0.124802                0.091167 -1.368936 0.171126 0.004207      0.004455  0.000247                0.008669  20160     2880
+image_factor_pc2    -0.000191                0.000299 -0.640465 0.521921 0.004207      0.004272  0.000065                0.048392  20160     2880
+image_factor_pc1     0.000033                0.000204  0.162129 0.871215 0.004207      0.004210  0.000002                0.068722  20160     2880
+
+=== Ensemble Extension ===
+                   candidate_name    base_ensemble     added_factor  rank_corr  top_k_cumulative_return  top_k_sharpe  top_k_hit_rate  top_bottom_spread_mean  turnover  n_rebalances  factor_vs_base_pearson  factor_vs_base_rank_corr_mean  rank_corr_diff_vs_base  bootstrap_ci_low  bootstrap_ci_high  n_dates
+ensemble_4family+image_factor_pc1 ensemble_4family image_factor_pc1   0.077075                 1.432402      0.605294        0.583333                0.009504  0.552448         144.0                0.231943                       0.281030                0.009694         -0.002897           0.021950     2880
+   ensemble_best+image_factor_pc1    ensemble_best image_factor_pc1   0.075246                 1.438816      0.609090        0.562500                0.007946  0.580420         144.0                0.230452                       0.271737                0.014692          0.002090           0.027119     2880
+                 ensemble_4family ensemble_4family                    0.067381                 1.239504      0.542997        0.604167                0.005907  0.601399         144.0                     NaN                            NaN                0.000000          0.000000           0.000000     2880
+                    ensemble_best    ensemble_best                    0.060554                 1.508639      0.642545        0.583333                0.006181  0.664336         144.0                     NaN                            NaN                0.000000          0.000000           0.000000     2880
+     ensemble_4family+image_score ensemble_4family      image_score   0.049912                 1.721476      0.674045        0.590278                0.006251  0.590909         144.0                0.140658                       0.288504               -0.017470         -0.029424          -0.005412     2880
+        ensemble_best+image_score    ensemble_best      image_score   0.047557                 1.393681      0.558400        0.562500                0.005472  0.583916         144.0                0.128995                       0.275151               -0.012997         -0.024729          -0.001233     2880
+
+Outputs saved to ode_inputs_cnn/image_factor_strict_window_ma

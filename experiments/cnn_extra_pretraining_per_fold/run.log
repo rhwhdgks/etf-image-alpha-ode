@@ -1,0 +1,230 @@
+Main samples: 24101 dates=3443
+First OOS test date: 2014-09-24
+Extra ETF pretrain cutoff: 2014-09-23
+Per-fold pretraining + fine-tuning: folds=48
+  fold  1/48: train= 3500 val= 420 test= 420 pretrain_cutoff=2014-09-23 test=2014-09-24..2014-12-17
+    pretrain cutoff=2014-09-23 extra_samples=65448 extra_assets=29
+Pretraining on extra ETFs: train=61968 val=3480 image_shape=(1, 64, 180)
+  fold  2/48: train= 3920 val= 420 test= 420 pretrain_cutoff=2014-12-17 test=2014-12-18..2015-03-17
+    pretrain cutoff=2014-12-17 extra_samples=67188 extra_assets=29
+Pretraining on extra ETFs: train=63708 val=3480 image_shape=(1, 64, 180)
+  fold  3/48: train= 4340 val= 420 test= 420 pretrain_cutoff=2015-03-17 test=2015-03-18..2015-06-11
+    pretrain cutoff=2015-03-17 extra_samples=68928 extra_assets=29
+Pretraining on extra ETFs: train=65448 val=3480 image_shape=(1, 64, 180)
+  fold  4/48: train= 4760 val= 420 test= 420 pretrain_cutoff=2015-06-11 test=2015-06-12..2015-09-04
+    pretrain cutoff=2015-06-11 extra_samples=70668 extra_assets=29
+Pretraining on extra ETFs: train=67188 val=3480 image_shape=(1, 64, 180)
+  fold  5/48: train= 5180 val= 420 test= 420 pretrain_cutoff=2015-09-04 test=2015-09-08..2015-12-01
+    pretrain cutoff=2015-09-04 extra_samples=72408 extra_assets=29
+Pretraining on extra ETFs: train=68928 val=3480 image_shape=(1, 64, 180)
+  fold  6/48: train= 5600 val= 420 test= 420 pretrain_cutoff=2015-12-01 test=2015-12-02..2016-02-29
+    pretrain cutoff=2015-12-01 extra_samples=74148 extra_assets=30
+Pretraining on extra ETFs: train=70668 val=3480 image_shape=(1, 64, 180)
+  fold  7/48: train= 6020 val= 420 test= 420 pretrain_cutoff=2016-02-29 test=2016-03-01..2016-05-24
+    pretrain cutoff=2016-02-29 extra_samples=75888 extra_assets=30
+Pretraining on extra ETFs: train=72408 val=3480 image_shape=(1, 64, 180)
+  fold  8/48: train= 6440 val= 420 test= 420 pretrain_cutoff=2016-05-24 test=2016-05-25..2016-08-18
+    pretrain cutoff=2016-05-24 extra_samples=77648 extra_assets=30
+Pretraining on extra ETFs: train=74148 val=3500 image_shape=(1, 64, 180)
+  fold  9/48: train= 6860 val= 420 test= 420 pretrain_cutoff=2016-08-18 test=2016-08-19..2016-11-11
+    pretrain cutoff=2016-08-18 extra_samples=79448 extra_assets=30
+Pretraining on extra ETFs: train=75888 val=3560 image_shape=(1, 64, 180)
+  fold 10/48: train= 7280 val= 420 test= 420 pretrain_cutoff=2016-11-11 test=2016-11-14..2017-02-09
+    pretrain cutoff=2016-11-11 extra_samples=81248 extra_assets=30
+Pretraining on extra ETFs: train=77648 val=3600 image_shape=(1, 64, 180)
+  fold 11/48: train= 7700 val= 420 test= 420 pretrain_cutoff=2017-02-09 test=2017-02-10..2017-05-08
+    pretrain cutoff=2017-02-09 extra_samples=83048 extra_assets=30
+Pretraining on extra ETFs: train=79448 val=3600 image_shape=(1, 64, 180)
+  fold 12/48: train= 8120 val= 420 test= 420 pretrain_cutoff=2017-05-08 test=2017-05-09..2017-08-02
+    pretrain cutoff=2017-05-08 extra_samples=84848 extra_assets=30
+Pretraining on extra ETFs: train=81248 val=3600 image_shape=(1, 64, 180)
+  fold 13/48: train= 8540 val= 420 test= 420 pretrain_cutoff=2017-08-02 test=2017-08-03..2017-10-26
+    pretrain cutoff=2017-08-02 extra_samples=86648 extra_assets=30
+Main samples: 24101 dates=3443
+First OOS test date: 2014-09-24
+Extra ETF pretrain cutoff: 2014-09-23
+Per-fold pretraining + fine-tuning: folds=48
+  fold  1/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_000.csv
+  fold  2/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_001.csv
+  fold  3/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_002.csv
+  fold  4/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_003.csv
+  fold  5/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_004.csv
+  fold  6/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_005.csv
+  fold  7/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_006.csv
+  fold  8/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_007.csv
+  fold  9/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_008.csv
+  fold 10/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_009.csv
+  fold 11/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_010.csv
+  fold 12/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_011.csv
+  fold 13/48: train= 8540 val= 420 test= 420 pretrain_cutoff=2017-08-02 test=2017-08-03..2017-10-26
+    pretrain cutoff=2017-08-02 extra_samples=86648 extra_assets=30
+Pretraining on extra ETFs: train=83048 val=3600 image_shape=(1, 64, 180)
+  fold 14/48: train= 8960 val= 420 test= 420 pretrain_cutoff=2017-10-26 test=2017-10-27..2018-01-24
+    pretrain cutoff=2017-10-26 extra_samples=88448 extra_assets=30
+Pretraining on extra ETFs: train=84848 val=3600 image_shape=(1, 64, 180)
+  fold 15/48: train= 9380 val= 420 test= 420 pretrain_cutoff=2018-01-24 test=2018-01-25..2018-04-20
+    pretrain cutoff=2018-01-24 extra_samples=90248 extra_assets=30
+Pretraining on extra ETFs: train=86648 val=3600 image_shape=(1, 64, 180)
+  fold 16/48: train= 9800 val= 420 test= 420 pretrain_cutoff=2018-04-20 test=2018-04-23..2018-07-17
+    pretrain cutoff=2018-04-20 extra_samples=92048 extra_assets=30
+Pretraining on extra ETFs: train=88448 val=3600 image_shape=(1, 64, 180)
+  fold 17/48: train=10220 val= 420 test= 420 pretrain_cutoff=2018-07-17 test=2018-07-18..2018-10-10
+    pretrain cutoff=2018-07-17 extra_samples=93848 extra_assets=30
+Pretraining on extra ETFs: train=90248 val=3600 image_shape=(1, 64, 180)
+  fold 18/48: train=10640 val= 420 test= 420 pretrain_cutoff=2018-10-10 test=2018-10-11..2019-01-08
+    pretrain cutoff=2018-10-10 extra_samples=95648 extra_assets=30
+Pretraining on extra ETFs: train=92048 val=3600 image_shape=(1, 64, 180)
+  fold 19/48: train=11060 val= 420 test= 420 pretrain_cutoff=2019-01-08 test=2019-01-09..2019-04-04
+    pretrain cutoff=2019-01-08 extra_samples=97448 extra_assets=30
+Pretraining on extra ETFs: train=93848 val=3600 image_shape=(1, 64, 180)
+  fold 20/48: train=11480 val= 420 test= 420 pretrain_cutoff=2019-04-04 test=2019-04-05..2019-07-01
+    pretrain cutoff=2019-04-04 extra_samples=99248 extra_assets=30
+Pretraining on extra ETFs: train=95648 val=3600 image_shape=(1, 64, 180)
+  fold 21/48: train=11900 val= 420 test= 420 pretrain_cutoff=2019-07-01 test=2019-07-02..2019-09-25
+    pretrain cutoff=2019-07-01 extra_samples=101048 extra_assets=30
+Pretraining on extra ETFs: train=97448 val=3600 image_shape=(1, 64, 180)
+  fold 22/48: train=12320 val= 420 test= 420 pretrain_cutoff=2019-09-25 test=2019-09-26..2019-12-19
+    pretrain cutoff=2019-09-25 extra_samples=102848 extra_assets=30
+Pretraining on extra ETFs: train=99248 val=3600 image_shape=(1, 64, 180)
+  fold 23/48: train=12740 val= 420 test= 420 pretrain_cutoff=2019-12-19 test=2019-12-20..2020-03-18
+    pretrain cutoff=2019-12-19 extra_samples=104648 extra_assets=30
+Pretraining on extra ETFs: train=101048 val=3600 image_shape=(1, 64, 180)
+Main samples: 24101 dates=3443
+First OOS test date: 2014-09-24
+Extra ETF pretrain cutoff: 2014-09-23
+Per-fold pretraining + fine-tuning: folds=48
+  fold  1/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_000.csv
+  fold  2/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_001.csv
+  fold  3/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_002.csv
+  fold  4/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_003.csv
+  fold  5/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_004.csv
+  fold  6/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_005.csv
+  fold  7/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_006.csv
+  fold  8/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_007.csv
+  fold  9/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_008.csv
+  fold 10/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_009.csv
+  fold 11/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_010.csv
+  fold 12/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_011.csv
+  fold 13/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_012.csv
+  fold 14/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_013.csv
+  fold 15/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_014.csv
+  fold 16/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_015.csv
+  fold 17/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_016.csv
+  fold 18/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_017.csv
+  fold 19/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_018.csv
+  fold 20/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_019.csv
+  fold 21/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_020.csv
+  fold 22/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_021.csv
+  fold 23/48: train=12740 val= 420 test= 420 pretrain_cutoff=2019-12-19 test=2019-12-20..2020-03-18
+    pretrain cutoff=2019-12-19 extra_samples=104648 extra_assets=30
+Main samples: 24101 dates=3443
+First OOS test date: 2014-09-24
+Extra ETF pretrain cutoff: 2014-09-23
+Per-fold pretraining + fine-tuning: folds=48
+  fold  1/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_000.csv
+  fold  2/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_001.csv
+  fold  3/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_002.csv
+  fold  4/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_003.csv
+  fold  5/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_004.csv
+  fold  6/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_005.csv
+  fold  7/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_006.csv
+  fold  8/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_007.csv
+  fold  9/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_008.csv
+  fold 10/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_009.csv
+  fold 11/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_010.csv
+  fold 12/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_011.csv
+  fold 13/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_012.csv
+  fold 14/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_013.csv
+  fold 15/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_014.csv
+  fold 16/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_015.csv
+  fold 17/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_016.csv
+  fold 18/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_017.csv
+  fold 19/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_018.csv
+  fold 20/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_019.csv
+  fold 21/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_020.csv
+  fold 22/48: cached -> /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold/fold_predictions/fold_021.csv
+  fold 23/48: train=12740 val= 420 test= 420 pretrain_cutoff=2019-12-19 test=2019-12-20..2020-03-18
+    pretrain cutoff=2019-12-19 extra_samples=104648 extra_assets=30
+Pretraining on extra ETFs: train=101048 val=3600 image_shape=(1, 64, 180)
+  fold 24/48: train=13160 val= 420 test= 420 pretrain_cutoff=2020-03-18 test=2020-03-19..2020-06-12
+    pretrain cutoff=2020-03-18 extra_samples=106448 extra_assets=30
+Pretraining on extra ETFs: train=102848 val=3600 image_shape=(1, 64, 180)
+  fold 25/48: train=13580 val= 420 test= 420 pretrain_cutoff=2020-06-12 test=2020-06-15..2020-09-08
+    pretrain cutoff=2020-06-12 extra_samples=108248 extra_assets=30
+Pretraining on extra ETFs: train=104648 val=3600 image_shape=(1, 64, 180)
+  fold 26/48: train=14000 val= 420 test= 420 pretrain_cutoff=2020-09-08 test=2020-09-09..2020-12-02
+    pretrain cutoff=2020-09-08 extra_samples=110048 extra_assets=30
+Pretraining on extra ETFs: train=106448 val=3600 image_shape=(1, 64, 180)
+  fold 27/48: train=14420 val= 420 test= 420 pretrain_cutoff=2020-12-02 test=2020-12-03..2021-03-02
+    pretrain cutoff=2020-12-02 extra_samples=111848 extra_assets=30
+Pretraining on extra ETFs: train=108248 val=3600 image_shape=(1, 64, 180)
+  fold 28/48: train=14840 val= 420 test= 420 pretrain_cutoff=2021-03-02 test=2021-03-03..2021-05-26
+    pretrain cutoff=2021-03-02 extra_samples=113648 extra_assets=30
+Pretraining on extra ETFs: train=110048 val=3600 image_shape=(1, 64, 180)
+  fold 29/48: train=15260 val= 420 test= 420 pretrain_cutoff=2021-05-26 test=2021-05-27..2021-08-20
+    pretrain cutoff=2021-05-26 extra_samples=115448 extra_assets=30
+Pretraining on extra ETFs: train=111848 val=3600 image_shape=(1, 64, 180)
+  fold 30/48: train=15680 val= 420 test= 420 pretrain_cutoff=2021-08-20 test=2021-08-23..2021-11-15
+    pretrain cutoff=2021-08-20 extra_samples=117248 extra_assets=30
+Pretraining on extra ETFs: train=113648 val=3600 image_shape=(1, 64, 180)
+  fold 31/48: train=16100 val= 420 test= 420 pretrain_cutoff=2021-11-15 test=2021-11-16..2022-02-10
+    pretrain cutoff=2021-11-15 extra_samples=119048 extra_assets=30
+Pretraining on extra ETFs: train=115448 val=3600 image_shape=(1, 64, 180)
+  fold 32/48: train=16520 val= 420 test= 420 pretrain_cutoff=2022-02-10 test=2022-02-11..2022-05-09
+    pretrain cutoff=2022-02-10 extra_samples=120848 extra_assets=30
+Pretraining on extra ETFs: train=117248 val=3600 image_shape=(1, 64, 180)
+  fold 33/48: train=16940 val= 420 test= 420 pretrain_cutoff=2022-05-09 test=2022-05-10..2022-08-04
+    pretrain cutoff=2022-05-09 extra_samples=122648 extra_assets=30
+Pretraining on extra ETFs: train=119048 val=3600 image_shape=(1, 64, 180)
+  fold 34/48: train=17360 val= 420 test= 420 pretrain_cutoff=2022-08-04 test=2022-08-05..2022-10-28
+    pretrain cutoff=2022-08-04 extra_samples=124448 extra_assets=30
+Pretraining on extra ETFs: train=120848 val=3600 image_shape=(1, 64, 180)
+  fold 35/48: train=17780 val= 420 test= 420 pretrain_cutoff=2022-10-28 test=2022-10-31..2023-01-26
+    pretrain cutoff=2022-10-28 extra_samples=126248 extra_assets=30
+Pretraining on extra ETFs: train=122648 val=3600 image_shape=(1, 64, 180)
+  fold 36/48: train=18200 val= 420 test= 420 pretrain_cutoff=2023-01-26 test=2023-01-27..2023-04-24
+    pretrain cutoff=2023-01-26 extra_samples=128048 extra_assets=30
+Pretraining on extra ETFs: train=124448 val=3600 image_shape=(1, 64, 180)
+  fold 37/48: train=18620 val= 420 test= 420 pretrain_cutoff=2023-04-24 test=2023-04-25..2023-07-20
+    pretrain cutoff=2023-04-24 extra_samples=129848 extra_assets=30
+Pretraining on extra ETFs: train=126248 val=3600 image_shape=(1, 64, 180)
+  fold 38/48: train=19040 val= 420 test= 420 pretrain_cutoff=2023-07-20 test=2023-07-21..2023-10-13
+    pretrain cutoff=2023-07-20 extra_samples=131648 extra_assets=30
+Pretraining on extra ETFs: train=128048 val=3600 image_shape=(1, 64, 180)
+  fold 39/48: train=19460 val= 420 test= 420 pretrain_cutoff=2023-10-13 test=2023-10-16..2024-01-10
+    pretrain cutoff=2023-10-13 extra_samples=133448 extra_assets=30
+Pretraining on extra ETFs: train=129848 val=3600 image_shape=(1, 64, 180)
+  fold 40/48: train=19880 val= 420 test= 420 pretrain_cutoff=2024-01-10 test=2024-01-11..2024-04-08
+    pretrain cutoff=2024-01-10 extra_samples=135248 extra_assets=30
+Pretraining on extra ETFs: train=131648 val=3600 image_shape=(1, 64, 180)
+  fold 41/48: train=20300 val= 420 test= 420 pretrain_cutoff=2024-04-08 test=2024-04-09..2024-07-03
+    pretrain cutoff=2024-04-08 extra_samples=137048 extra_assets=30
+Pretraining on extra ETFs: train=133448 val=3600 image_shape=(1, 64, 180)
+  fold 42/48: train=20720 val= 420 test= 420 pretrain_cutoff=2024-07-03 test=2024-07-05..2024-09-27
+    pretrain cutoff=2024-07-03 extra_samples=138848 extra_assets=30
+Pretraining on extra ETFs: train=135248 val=3600 image_shape=(1, 64, 180)
+  fold 43/48: train=21140 val= 420 test= 420 pretrain_cutoff=2024-09-27 test=2024-09-30..2024-12-23
+    pretrain cutoff=2024-09-27 extra_samples=140648 extra_assets=30
+Pretraining on extra ETFs: train=137048 val=3600 image_shape=(1, 64, 180)
+  fold 44/48: train=21560 val= 420 test= 420 pretrain_cutoff=2024-12-23 test=2024-12-24..2025-03-24
+    pretrain cutoff=2024-12-23 extra_samples=142448 extra_assets=30
+Pretraining on extra ETFs: train=138848 val=3600 image_shape=(1, 64, 180)
+  fold 45/48: train=21980 val= 420 test= 420 pretrain_cutoff=2025-03-24 test=2025-03-25..2025-06-18
+    pretrain cutoff=2025-03-24 extra_samples=144248 extra_assets=30
+Pretraining on extra ETFs: train=140648 val=3600 image_shape=(1, 64, 180)
+  fold 46/48: train=22400 val= 420 test= 420 pretrain_cutoff=2025-06-18 test=2025-06-20..2025-09-15
+    pretrain cutoff=2025-06-18 extra_samples=146048 extra_assets=30
+Pretraining on extra ETFs: train=142448 val=3600 image_shape=(1, 64, 180)
+  fold 47/48: train=22820 val= 420 test= 420 pretrain_cutoff=2025-09-15 test=2025-09-16..2025-12-09
+    pretrain cutoff=2025-09-15 extra_samples=147848 extra_assets=30
+Pretraining on extra ETFs: train=144248 val=3600 image_shape=(1, 64, 180)
+  fold 48/48: train=23240 val= 420 test= 420 pretrain_cutoff=2025-12-09 test=2025-12-10..2026-03-09
+    pretrain cutoff=2025-12-09 extra_samples=149648 extra_assets=30
+Pretraining on extra ETFs: train=146048 val=3600 image_shape=(1, 64, 180)
+
+=== Extra ETF CNN Pretraining Comparison ===
+                            model_name  future_return_rank_correlation  top_k_sharpe  top_k_cumulative_return  top_k_hit_rate     rmse  n_dates
+                 cnn_2d_residual_small                        0.031061      0.123817                 0.038994        0.560606 0.035391     1320
+cnn_2d_residual_small_extra_pretrained                       -0.058096      0.100276                 0.005031        0.555556 0.046500     2880
+
+Outputs saved to: /home/jonghan/findalpha/delta/sprint2/experiments/cnn_extra_pretraining_per_fold

@@ -17,6 +17,7 @@ class PipelineConfig:
     include_volume: bool = True
     chart_variant: str = "ohlc_ma_volume"
     ma_window: int | None = None
+    strict_window_ma: bool = False
     image_height: int = 64
     train_frac: float = 0.70
     val_frac: float = 0.15

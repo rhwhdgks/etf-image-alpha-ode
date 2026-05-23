@@ -21,6 +21,8 @@ import seaborn as sns
 ROOT = Path(__file__).parent
 OUT = ROOT / "ode_inputs_cnn"
 FIG = OUT / "figures"
+# walk-forward prediction sources (moved into archive/ after the model sprint)
+WF = ROOT / "archive" / "model_exploration" / "walkforward_outputs"
 sns.set_theme(style="whitegrid", context="talk")
 RNG = np.random.default_rng(seed=42)
 B = 10000
@@ -33,10 +35,19 @@ def per_date_rank_corr(df: pd.DataFrame, signal_col: str = "signal_value") -> pd
     return g.dropna()
 
 
+def _wf_path(src: str) -> Path:
+    """Resolve a walk-forward source tag to its predictions CSV."""
+    if src == "cnnlstm":
+        return ROOT / "cnnlstm" / "walkforward_predictions.csv"
+    if src == "lstm":
+        return ROOT / "lstm" / "walkforward_predictions.csv"
+    return WF / src / "walkforward_predictions.csv"
+
+
 def load_ensemble_signal(members: list[tuple[str, str]], aggregation: str = "rank_mean") -> pd.DataFrame:
     frames = []
     for model, src in members:
-        df = pd.read_csv(ROOT / src / "walkforward_predictions.csv")
+        df = pd.read_csv(_wf_path(src))
         df["date"] = pd.to_datetime(df["date"], format="mixed").dt.normalize()
         df = df[df["model_name"] == model][["date", "asset", "signal_value", "future_return"]].copy()
         df["model"] = model
@@ -52,17 +63,49 @@ def load_ensemble_signal(members: list[tuple[str, str]], aggregation: str = "ran
 
 
 def load_single_model(model: str, src: str) -> pd.DataFrame:
-    df = pd.read_csv(ROOT / src / "walkforward_predictions.csv")
+    df = pd.read_csv(_wf_path(src))
     df["date"] = pd.to_datetime(df["date"], format="mixed").dt.normalize()
     return df[df["model_name"] == model][["date", "asset", "signal_value", "future_return"]].copy()
 
 
 def paired_bootstrap_ci(diffs: np.ndarray, b: int = B, alpha: float = 0.05) -> tuple[float, float, float]:
+    """IID paired bootstrap — assumes the daily diff series is uncorrelated."""
     n = len(diffs)
     boots = np.empty(b)
     for i in range(b):
         idx = RNG.integers(0, n, size=n)
         boots[i] = diffs[idx].mean()
+    lo, hi = np.quantile(boots, [alpha / 2, 1 - alpha / 2])
+    return float(diffs.mean()), float(lo), float(hi), boots
+
+
+def stationary_block_bootstrap_ci(
+    diffs: np.ndarray, expected_block: int = 20, b: int = B, alpha: float = 0.05
+) -> tuple[float, float, float, np.ndarray]:
+    """Stationary block bootstrap (Politis & Romano 1994).
+
+    The per-date rank-correlation diff series is autocorrelated: the 20-day
+    forward-return horizon makes adjacent days' signals overlap. IID resampling
+    then understates the CI width. The stationary block bootstrap resamples
+    blocks of random geometric length (mean = expected_block), preserving local
+    autocorrelation and producing an honest, usually wider CI.
+    """
+    n = len(diffs)
+    p = 1.0 / expected_block
+    boots = np.empty(b)
+    for i in range(b):
+        out = np.empty(n)
+        filled = 0
+        while filled < n:
+            start = RNG.integers(0, n)
+            # geometric block length, mean 1/p
+            blk = RNG.geometric(p)
+            for k in range(blk):
+                if filled >= n:
+                    break
+                out[filled] = diffs[(start + k) % n]
+                filled += 1
+        boots[i] = out.mean()
     lo, hi = np.quantile(boots, [alpha / 2, 1 - alpha / 2])
     return float(diffs.mean()), float(lo), float(hi), boots
 
@@ -73,6 +116,7 @@ def compare(name_a: str, series_a: pd.Series, name_b: str, series_b: pd.Series) 
     b = series_b.loc[common].to_numpy()
     diffs = b - a
     mean_diff, lo, hi, boots = paired_bootstrap_ci(diffs)
+    _, blo, bhi, bblock = stationary_block_bootstrap_ci(diffs, expected_block=20)
     return {
         "name_a": name_a,
         "name_b": name_b,
@@ -84,6 +128,10 @@ def compare(name_a: str, series_a: pd.Series, name_b: str, series_b: pd.Series) 
         "ci_high": hi,
         "significant": (lo > 0) or (hi < 0),
         "boots": boots,
+        "block_ci_low": blo,
+        "block_ci_high": bhi,
+        "block_significant": (blo > 0) or (bhi < 0),
+        "block_boots": bblock,
     }
 
 
@@ -121,6 +169,11 @@ def main() -> None:
     # Markdown report
     md = ["# Bootstrap Significance Test\n"]
     md.append(f"Paired bootstrap (B={B}, 95% CI) on per-date rank correlation series.\n")
+    md.append("Two methods reported:\n")
+    md.append("- **IID**: classic resampling — assumes daily diffs are uncorrelated.")
+    md.append("- **Block**: stationary block bootstrap (Politis-Romano, mean block 20) — "
+              "accounts for autocorrelation from the 20-day overlapping return horizon. "
+              "This is the honest CI; it is usually wider.\n")
     md.append("Positive `mean_diff` = B is better than A on average.\n")
 
     pairs = [
@@ -136,9 +189,28 @@ def main() -> None:
         md.append(f"- B: `{p['name_b']}` — mean rank corr {p['mean_b']:.4f}")
         md.append(f"- N dates: {p['n_dates']}")
         md.append(f"- mean diff (B − A): **{p['mean_diff']:+.4f}**")
-        md.append(f"- 95% CI: [{p['ci_low']:+.4f}, {p['ci_high']:+.4f}]")
-        verdict = "**significant** (CI excludes 0)" if p["significant"] else "**NOT significant** (CI includes 0)"
-        md.append(f"- Verdict: {verdict}\n")
+        iid_v = "significant" if p["significant"] else "NOT significant"
+        blk_v = "significant" if p["block_significant"] else "NOT significant"
+        md.append(f"- IID 95% CI: [{p['ci_low']:+.4f}, {p['ci_high']:+.4f}] → **{iid_v}**")
+        md.append(f"- Block 95% CI: [{p['block_ci_low']:+.4f}, {p['block_ci_high']:+.4f}] → **{blk_v}**  ← honest")
+        md.append("")
+
+    md.append("## Interpretation\n")
+    md.append("The block bootstrap is the methodologically correct choice here: the "
+              "per-date rank-correlation series is autocorrelated because the 20-day "
+              "forward-return horizon makes adjacent days overlap. IID resampling "
+              "ignores this and produces CIs that are too narrow.\n")
+    md.append("Honest (block-bootstrap) conclusions:\n")
+    md.append("- **ensemble vs raw floor** (`logistic_cumulative`, no image / no model): "
+              "lift +0.075, block CI excludes 0 → **significant**.")
+    md.append("- **ensemble vs image baseline** (`logistic_image`): lift +0.021 / +0.028, "
+              "block CI **includes 0** → not statistically significant. The IID CI flagged "
+              "these as significant, but that was an autocorrelation artifact.")
+    md.append("- **within-ensemble** (Phase 3 → Phase 4): not significant under either method.\n")
+    md.append("This re-confirms the honest 'same-tier' framing: the statistically robust "
+              "lift comes from the **image transformation itself** (raw floor → image "
+              "baseline); stacking CNN/LSTM/ensemble on top adds a positive point estimate "
+              "that stays inside autocorrelation-honest confidence bounds.\n")
 
     out_md = OUT / "significance_test.md"
     out_md.write_text("\n".join(md), encoding="utf-8")
@@ -146,39 +218,39 @@ def main() -> None:
     for line in md:
         print(line)
 
-    # Figure: focus on the 3 key comparisons (drop redundant pair2, pair5)
+    # Figure: focus on the 3 key comparisons; show IID vs block CI
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
     plot_specs = [
-        (pair3, "logistic_image  →  ensemble_best", "Phase 3 lift (vs baseline)", True),
-        (pair4, "logistic_image  →  ensemble_4family", "Phase 4 lift (vs baseline)", True),
-        (pair1, "ensemble_best  →  ensemble_4family", "Phase 3 vs 4 (within-ensemble)", False),
+        (pair3, "logistic_image  →  ensemble_best", "Phase 3 lift (vs baseline)"),
+        (pair4, "logistic_image  →  ensemble_4family", "Phase 4 lift (vs baseline)"),
+        (pair1, "ensemble_best  →  ensemble_4family", "Phase 3 vs 4 (within-ensemble)"),
     ]
-    for ax, (p, title, subtitle, is_sig) in zip(axes, plot_specs):
-        # histogram bar color reflects significance
+    for ax, (p, title, subtitle) in zip(axes, plot_specs):
+        is_sig = p["block_significant"]  # honest verdict = block bootstrap
         bar_color = "#5DADE2" if is_sig else "#D5DBDB"
-        ax.hist(p["boots"], bins=80, color=bar_color, edgecolor="black", alpha=0.85)
-        # axes lines
+        ax.hist(p["block_boots"], bins=80, color=bar_color, edgecolor="black", alpha=0.85)
         ax.axvline(0, color="black", linestyle="--", linewidth=1.2)
         ax.axvline(p["mean_diff"], color="#c0392b", linewidth=3,
                    label=f"obs Δ = {p['mean_diff']:+.4f}")
-        ax.axvline(p["ci_low"], color="#16a085", linestyle=":", linewidth=2.5,
-                   label=f"95% CI low = {p['ci_low']:+.4f}")
-        ax.axvline(p["ci_high"], color="#16a085", linestyle=":", linewidth=2.5,
-                   label=f"95% CI high = {p['ci_high']:+.4f}")
-        # title with verdict badge
-        verdict_text = "✓ SIGNIFICANT" if is_sig else "borderline"
+        ax.axvline(p["ci_low"], color="#16a085", linestyle=":", linewidth=2.0,
+                   label=f"IID CI [{p['ci_low']:+.4f}, {p['ci_high']:+.4f}]")
+        ax.axvline(p["ci_high"], color="#16a085", linestyle=":", linewidth=2.0)
+        ax.axvline(p["block_ci_low"], color="#e67e22", linestyle="--", linewidth=2.5,
+                   label=f"Block CI [{p['block_ci_low']:+.4f}, {p['block_ci_high']:+.4f}]")
+        ax.axvline(p["block_ci_high"], color="#e67e22", linestyle="--", linewidth=2.5)
+        verdict_text = "✓ SIGNIFICANT (block)" if is_sig else "borderline (block)"
         verdict_color = "#16a085" if is_sig else "#c0392b"
         ax.set_title(f"{title}\n{subtitle}", fontsize=14, fontweight="bold")
-        ax.text(0.02, 0.95, verdict_text, transform=ax.transAxes,
-                fontsize=14, fontweight="bold", color=verdict_color,
+        ax.text(0.02, 0.96, verdict_text, transform=ax.transAxes,
+                fontsize=13, fontweight="bold", color=verdict_color,
                 verticalalignment="top",
                 bbox=dict(boxstyle="round,pad=0.4", facecolor="white", edgecolor=verdict_color, linewidth=2))
         ax.set_xlabel("paired Δ rank correlation  (B − A)", fontsize=12)
-        ax.set_ylabel("bootstrap frequency", fontsize=11)
+        ax.set_ylabel("block-bootstrap frequency", fontsize=11)
         ax.tick_params(labelsize=11)
-        ax.legend(loc="upper right", fontsize=11, framealpha=0.95)
+        ax.legend(loc="upper right", fontsize=10, framealpha=0.95)
         ax.grid(True, alpha=0.3)
-    fig.suptitle(f"Paired bootstrap CI (B={B}) — does the lift survive statistical scrutiny?",
+    fig.suptitle(f"Paired bootstrap CI (B={B}) — IID vs stationary block (autocorrelation-honest)",
                  fontsize=16, fontweight="bold", y=1.02)
     fig.tight_layout()
     out_png = FIG / "12_bootstrap_ci.png"

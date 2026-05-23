@@ -1,0 +1,9 @@
+input_name,rank_corr,top_k_sharpe,n_dates
+mu_lstm_image,0.0506,0.1852,2880
+mu_cnnlstm_image,0.0448,0.4337,2880
+mu_cnn_2d_residual_small,0.0426,0.208,2880
+mu_logistic_image,0.0392,0.385,2880
+mu_cnn_1d_cumulative,0.0271,0.5214,2880
+mu_momentum_60d,0.0245,0.1795,2880
+mu_logistic_cumulative,-0.0072,0.0764,2880
+mu_equal_weight,,0.1047,2880

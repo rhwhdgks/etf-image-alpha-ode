@@ -1,0 +1,6 @@
+input_name,calibrated_dates,start,daily_rank_corr,rmse,mean_horizon_mu,std_horizon_mu,embargo
+mu_image_factor_strict_rank,2609,2015-10-21,0.061,0.0462,0.00176,0.00321,True
+mu_image_factor_rank,2609,2015-10-21,0.0542,0.0463,0.00176,0.00335,True
+mu_image_factor_balanced,2609,2015-10-21,0.0481,0.0463,0.00176,0.00303,True
+mu_rank_baseline,2609,2015-10-21,0.0421,0.0463,0.00176,0.00286,True
+mu_sharpe_baseline,2609,2015-10-21,0.0165,0.0463,0.00176,0.00258,True

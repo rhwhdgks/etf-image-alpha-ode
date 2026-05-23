@@ -88,7 +88,7 @@ def _prepare_common_panel(common_panel: pd.DataFrame, config: PipelineConfig) ->
     asset_frames: dict[str, pd.DataFrame] = {}
     for asset, asset_frame in common_panel.groupby("asset"):
         ordered = asset_frame.sort_values("date").reset_index(drop=True).copy()
-        if config.include_moving_average:
+        if config.include_moving_average and not config.strict_window_ma:
             ordered["ma"] = (
                 ordered["close"]
                 .rolling(window=config.resolved_ma_window, min_periods=config.resolved_ma_window)
@@ -119,9 +119,21 @@ def build_samples(common_panel: pd.DataFrame, config: PipelineConfig) -> tuple[S
     for asset in selected_assets:
         asset_frame = asset_frames[asset]
         last_signal_index = len(asset_frame) - config.horizon - 1
-        for idx in range(config.lookback - 1, last_signal_index + 1):
+        min_signal_index = config.lookback - 1
+        if config.include_moving_average and config.strict_window_ma:
+            # Keep the strict-MA experiment on the same warmup grid as the
+            # original full-series MA, while still rendering MA values from
+            # within-window prices only.
+            min_signal_index = config.lookback + config.resolved_ma_window - 2
+        for idx in range(min_signal_index, last_signal_index + 1):
             window = asset_frame.iloc[idx - config.lookback + 1 : idx + 1].copy()
             future_slice = asset_frame.iloc[idx + 1 : idx + config.horizon + 1].copy()
+            if config.include_moving_average and config.strict_window_ma:
+                window["ma"] = (
+                    window["close"]
+                    .rolling(window=config.resolved_ma_window, min_periods=1)
+                    .mean()
+                )
 
             if window[REQUIRED_PRICE_FIELDS].isna().any().any():
                 continue
@@ -198,6 +210,7 @@ def build_samples(common_panel: pd.DataFrame, config: PipelineConfig) -> tuple[S
         "include_moving_average": config.include_moving_average,
         "include_volume": config.include_volume,
         "chart_variant": config.chart_variant,
+        "strict_window_ma": config.strict_window_ma,
         "ma_window": config.resolved_ma_window if config.include_moving_average else None,
         "n_samples": int(len(metadata)),
         "sequence_shape": list(bundle.image_sequences.shape[1:]),

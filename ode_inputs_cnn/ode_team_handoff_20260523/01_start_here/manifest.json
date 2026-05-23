@@ -1,0 +1,190 @@
+{
+  "package_name": "ode_team_handoff_20260523",
+  "package_root": "ode_inputs_cnn/ode_team_handoff_20260523",
+  "last_reviewed": "2026-05-19 (audit-revised 2026-05-20)",
+  "reproducibility_doc": "REPRODUCIBILITY.md",
+  "paper_draft": "PAPER_DRAFT.md",
+  "python_version": "3.12.3",
+  "default_seed": 42,
+  "scope": "mu(t), Sigma(t), realized returns, and validation reports for ODE portfolio optimization handoff",
+  "recommended_input": "mu_image_factor_rank",
+  "recommended_file": "02_mu_inputs/selected_mu_input.csv",
+  "recommended_signal_column": "mu_signal",
+  "recommended_return_scale_column": "mu_calibrated_daily",
+  "lookback": 60,
+  "horizon": 20,
+  "chart_variant": "ohlc_ma_volume",
+  "signal_type": "cross_sectional_centered_rank",
+  "date_range": {
+    "start": "2014-09-24",
+    "end": "2026-03-09",
+    "n_dates": 2880
+  },
+  "assets": [
+    "alternative",
+    "corp_bond_ig",
+    "developed_equity",
+    "emerging_equity",
+    "korea_equity",
+    "short_treasury",
+    "treasury_7_10y"
+  ],
+  "mu_files": {
+    "selected_mu_input": "02_mu_inputs/selected_mu_input.csv",
+    "final_mu_inputs_long": "02_mu_inputs/final_mu_inputs_long.csv",
+    "final_mu_inputs_wide": "02_mu_inputs/final_mu_inputs_wide.csv",
+    "final_mu_inputs_calibrated": "02_mu_inputs/final_mu_inputs_calibrated.csv",
+    "input_performance_summary": "02_mu_inputs/input_performance_summary.csv",
+    "main_vs_strict_mu_comparison": "02_mu_inputs/main_vs_strict_mu_comparison.csv",
+    "mu_calibration_summary": "02_mu_inputs/mu_calibration_summary.csv",
+    "extra_mu_candidates_long": "02_mu_inputs/extra_mu_candidates_long.csv",
+    "extra_mu_candidates_wide": "02_mu_inputs/extra_mu_candidates_wide.csv",
+    "extra_mu_candidates_summary": "02_mu_inputs/extra_mu_candidates_summary.csv"
+  },
+  "extra_mu_candidates": {
+    "purpose": "Reference / baseline mu(t) spectrum so the ODE team can measure how much each signal layer actually contributes. No retraining: all model sources are existing walk-forward predictions on the identical fold grid (leakage-clean, directly comparable).",
+    "reproducing_script": "build_extra_mu_candidates.py",
+    "same_schema_as": "02_mu_inputs/final_mu_inputs_long.csv",
+    "candidates": [
+      "mu_logistic_cumulative  (raw floor: no image, no deep model; rank corr -0.007)",
+      "mu_logistic_image       (linear + image baseline; rank corr 0.039)",
+      "mu_cnn_2d_residual_small (best single CNN; rank corr 0.043)",
+      "mu_cnn_1d_cumulative    (high-Sharpe single CNN; rank corr 0.027, Sharpe 0.521)",
+      "mu_lstm_image           (best single model overall; rank corr 0.051)",
+      "mu_cnnlstm_image        (best CNN+LSTM hybrid; rank corr 0.045)",
+      "mu_momentum_60d         (classic 60-day cumulative-return factor; rank corr 0.025)",
+      "mu_equal_weight         (null floor: constant signal; rank corr undefined)"
+    ]
+  },
+  "sigma_return_files": {
+    "sigma_wide": "03_sigma_returns/sigma_wide.csv",
+    "sigma_long": "03_sigma_returns/sigma_long.csv",
+    "sigma_shrunk_wide": "03_sigma_returns/sigma_shrunk_wide.csv",
+    "sigma_shrunk_long": "03_sigma_returns/sigma_shrunk_long.csv",
+    "sigma_ewma_wide": "03_sigma_returns/sigma_ewma_wide.csv",
+    "sigma_ewma_long": "03_sigma_returns/sigma_ewma_long.csv",
+    "sigma_multiwindow_wide": "03_sigma_returns/sigma_multiwindow_wide.csv",
+    "sigma_multiwindow_long": "03_sigma_returns/sigma_multiwindow_long.csv",
+    "sigma_shrinkage_report": "03_sigma_returns/sigma_shrinkage_report.md",
+    "sigma_variants_report": "03_sigma_returns/sigma_variants_report.md",
+    "returns_for_ode": "03_sigma_returns/returns_for_ode.csv",
+    "prices_for_ode": "03_sigma_returns/prices_for_ode.csv",
+    "sigma_manifest": "03_sigma_returns/sigma_manifest.json"
+  },
+  "prices_note": "prices_for_ode.csv contains daily close prices for the 7 ETFs (3580 dates, 2012-01-13 to 2026-04-10). Use for transaction-cost / turnover simulation; the OOS signal grid is the 2880-date subset aligned with mu / Sigma files.",
+  "sigma_variants_summary": {
+    "default_recommendation": "sigma_shrunk_wide.csv (most stable: cond median 64)",
+    "comparison": {
+      "sample (60d sample cov)":   {"file": "sigma_wide.csv",         "cond_median": 2409, "cond_p95": 10643, "max_cond": 18443, "dates_over_1e4": 176},
+      "shrunk (Ledoit-Wolf)":      {"file": "sigma_shrunk_wide.csv",  "cond_median":   64, "cond_p95":   142, "max_cond":   205, "dates_over_1e4":   0},
+      "ewma (lambda=0.94)":        {"file": "sigma_ewma_wide.csv",    "cond_median": 2588, "cond_p95": 10901, "max_cond": 29436, "dates_over_1e4": 220},
+      "multiwindow (60d+120d)":    {"file": "sigma_multiwindow_wide.csv", "cond_median": 2227, "cond_p95":  9884, "max_cond": 15025, "dates_over_1e4": 138}
+    },
+    "reproducing_scripts": ["build_sigma_shrunk.py", "build_sigma_variants.py"]
+  },
+  "recommended_sigma": {
+    "default": "03_sigma_returns/sigma_shrunk_wide.csv",
+    "reason": "Ledoit-Wolf shrunk covariance; condition number median 2409->64, all 176 dates with cond>1e4 removed. With constant gamma, w*=(alpha/2 gamma_0) Sigma^-1 mu so a stable inverse matters.",
+    "comparison_baseline": "03_sigma_returns/sigma_wide.csv (plain 60-day sample covariance, kept for A/B test)"
+  },
+  "validation_reports": {
+    "multiple_testing_report": "04_validation_reports/multiple_testing_report.md",
+    "multiple_testing_csv": "04_validation_reports/image_factor_significance_multiple_testing.csv",
+    "multiple_testing_summary": "04_validation_reports/multiple_testing_summary.csv",
+    "subperiod_stability_report": "04_validation_reports/mu_subperiod_stability_report.md",
+    "subperiod_stability_csv": "04_validation_reports/mu_subperiod_stability.csv",
+    "subperiod_rank_corr_pivot": "04_validation_reports/mu_subperiod_rank_corr_pivot.csv",
+    "calibration_report": "04_validation_reports/mu_calibration_report.md",
+    "process_integrity_report": "04_validation_reports/process_integrity_report.md"
+  },
+  "source_notes": {
+    "image_factor_phase12": "05_source_notes/image_factor_phase12_final_report.md",
+    "strict_window_ma": "05_source_notes/strict_window_ma_result_note.md",
+    "extra_pretraining": "05_source_notes/extra_pretraining_result_note.md"
+  },
+  "inputs": {
+    "mu_sharpe_baseline": {
+      "source_model_name": "ensemble_best",
+      "strict_window_ma": false,
+      "rank_corr": 0.0606,
+      "top_k_sharpe": 0.6425,
+      "role": "Sharpe-stable baseline from prior ensemble sprint"
+    },
+    "mu_rank_baseline": {
+      "source_model_name": "ensemble_4family",
+      "strict_window_ma": false,
+      "rank_corr": 0.0674,
+      "top_k_sharpe": 0.5430,
+      "role": "Rank-correlation baseline before image-factor add-on"
+    },
+    "mu_image_factor_rank": {
+      "source_model_name": "ensemble_4family+image_factor_pc1",
+      "strict_window_ma": false,
+      "rank_corr": 0.0798,
+      "top_k_sharpe": 0.3155,
+      "rank_corr_lift_vs_rank_baseline": 0.0124,
+      "bootstrap_ci": [
+        0.00001,
+        0.02505
+      ],
+      "role": "Recommended ranking-improved input using full OHLC+MA+Volume image factor PC1"
+    },
+    "mu_image_factor_strict_rank": {
+      "source_model_name": "ensemble_4family+image_factor_pc1",
+      "strict_window_ma": true,
+      "rank_corr": 0.0771,
+      "top_k_sharpe": 0.6053,
+      "rank_corr_lift_vs_rank_baseline": 0.0097,
+      "bootstrap_ci": [
+        -0.00290,
+        0.02195
+      ],
+      "role": "Conservative robustness input using MA recomputed only within each 60-day image window"
+    },
+    "mu_image_factor_balanced": {
+      "source_model_name": "ensemble_best+image_factor_pc1",
+      "strict_window_ma": false,
+      "rank_corr": 0.0731,
+      "top_k_sharpe": 0.5109,
+      "rank_corr_lift_vs_sharpe_baseline": 0.0125,
+      "bootstrap_ci": [
+        0.00057,
+        0.02448
+      ],
+      "role": "Secondary image-factor input with smaller Sharpe trade-off than the 4-family add-on"
+    }
+  },
+  "row_counts": {
+    "final_mu_inputs_long": 100800,
+    "selected_mu_input": 20160,
+    "final_mu_inputs_wide": 20160,
+    "final_mu_inputs_calibrated": 100800,
+    "returns_for_ode": 2880,
+    "sigma_wide": 2880,
+    "sigma_long": 141120
+  },
+  "calibration": {
+    "method": "expanding pooled OLS future_return ~ 1 + mu_signal by input_name, with horizon embargo",
+    "minimum_training_dates": 252,
+    "horizon_embargo": true,
+    "reproducing_script": "build_mu_calibration.py",
+    "outputs": [
+      "mu_calibrated_horizon",
+      "mu_calibrated_daily"
+    ],
+    "default_recommendation": "use rank-based mu_signal first; use calibrated mu only if return-scale inputs are required",
+    "note": "Rebuilt 2026-05 to be repo-reproducible (build_mu_calibration.py). A horizon embargo was added: a training date s is used to calibrate date t only if index(s) + horizon <= index(t), so no not-yet-realised forward return enters the OLS fit. This shifts the first calibrated date to 2015-10-21 and slightly lowers calibrated rank corr versus the earlier un-embargoed file."
+  },
+  "known_limitations": {
+    "walkforward_embargo": "generate_walkforward_folds places train/val/test adjacently with no horizon-day purge gap. The last ~horizon training dates per fold carry future_return labels that overlap the adjacent period (~1-2% of training rows contaminated). All models share the identical fold structure, so absolute OOS metrics may be slightly inflated but lift/CI comparisons are contamination-symmetric and approximately unbiased.",
+    "calibration_script_history": "The original calibrated file had no reproducing script in the repo; build_mu_calibration.py restores reproducibility and adds the horizon embargo above.",
+    "bootstrap_ci_method": "The bootstrap CIs reported in the image-factor inputs above and in 04_validation_reports were computed with IID resampling, which ignores the autocorrelation induced by the 20-day overlapping return horizon and therefore understates CI width. A stationary block bootstrap (significance_test.md / bootstrap_significance.py) was run on the ensemble-level comparisons: under the block method, the image-factor lift over the image-enabled baseline is NOT statistically significant (block CI includes 0), although the point estimate stays positive. Only the lift over the rawest no-image baseline survives the block bootstrap. Treat the image-factor lift as a positive but autocorrelation-honest-not-significant trend; the statistically robust gain comes from the image transformation itself."
+  },
+  "warnings": [
+    "future_return is an evaluation target, not an ODE input",
+    "Sigma(t) is a rolling historical covariance estimate, not a CNN prediction",
+    "image-factor lift is regime-sensitive: lift is NEGATIVE in the 2020-2022 covid-inflation subperiod (mu_image_factor_rank rank-corr lift -0.0148, strict -0.0683); see mu_subperiod_stability_report.md",
+    "extra ETF supervised pretraining is a negative robustness result and is not recommended as the main ODE input",
+    "selected_mu_input.csv default (mu_image_factor_rank) has the lowest top-k Sharpe (0.3155) among candidates; for Sharpe-priority use compare against mu_sharpe_baseline / mu_rank_baseline"
+  ]
+}
