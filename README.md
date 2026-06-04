@@ -1,131 +1,126 @@
-# sprint2-etf-cnn
+# Image-Based ETF Alpha Signals for ODE Portfolio Inputs
 
-7개 ETF 자산의 μ(기대수익) 시그널을 CNN으로 생성해 ODE 기반 동적 포트폴리오 최적화 스프린트에 넘겨주는 핸드오프 패키지.
+Research and engineering project for building cross-sectional ETF alpha signals from price-chart images, then packaging those signals with covariance estimates for a downstream ODE-based dynamic portfolio optimizer.
 
-## 요약
+This repository is positioned as a finance research / risk-input project for LP/MM-adjacent roles. It is not a market-making execution engine: there is no quoting logic, fill simulator, venue routing, or inventory controller. The focus is the layer before that: signal construction, risk/covariance handoff, and process integrity.
 
-- 60일 OHLCV를 Jiang-style 이미지로 변환 → **CNN 8종 + LSTM 4종 + logistic 2종 = 14 entries** 를 walk-forward OOS 평가
-- 평가: 24~48 folds × 7년 OOS × 2,880일
-- 결과물: `ode_inputs_cnn/` 아래 14 모델별 μ·Σ·risk·R 번들 + 3종 앙상블 (top3 / best / 4family) + QA + 베이스라인 비교 + bootstrap significance
-- **Phase 3** (CNN + logistic mix) `ensemble_best` rank corr **0.0606**, Sharpe **0.630**
-- **Phase 4** (CNN+LSTM hybrid 합류, `cnnlstm_image_scale`) `ensemble_4family` rank corr **0.0674** / Sharpe **0.543** — 점추정 +0.0068 향상, 95% CI [−0.002, +0.016] 0 살짝 포함 (borderline NOT significant). cnnlstm vs logistic ρ = **−0.17 (음의 상관)** 으로 분산 감소 효과 큼 — **상관 구조 thesis 강하게 지지**
-- 자세한 해설은 [blog_cnn_lstm_handoff.md](blog_cnn_lstm_handoff.md)
+## What This Project Demonstrates
 
-## 디렉토리
+- Cross-sectional ETF alpha research using 7 asset-class ETFs.
+- Jiang-style OHLCV chart rendering and CNN image-factor extraction.
+- Signal comparison across logistic, 1D CNN, 2D CNN, LSTM, and CNN+LSTM hybrid model families.
+- Image-factor validation after rolling PCA common-factor controls.
+- ODE-ready handoff files for expected-return-style `mu(t)`, covariance `Sigma(t)`, and realized returns `R(t)`.
+- Covariance shrinkage diagnostics showing why sample covariance can be unstable before optimization.
+- Leakage checks, block-bootstrap caveats, multiple-testing notes, and negative-result documentation.
 
+## Research Scope
+
+| Item | Setting |
+|---|---|
+| Universe | 7 ETF asset classes |
+| Target | 20-day forward return ranking |
+| Main lookback | 60 trading days |
+| Core representation | OHLCV price chart image |
+| Main image-factor model | 2D residual CNN feature / score |
+| Evaluation | walk-forward out-of-sample |
+| Downstream use | ODE portfolio optimizer input package |
+
+The project asks whether price-path image information can improve ETF ranking signals that later become optimizer inputs. It does not claim production trading profitability.
+
+## Key Results
+
+| Signal | Interpretation | Rank Corr | Top-k Sharpe |
+|---|---|---:|---:|
+| `logistic_cumulative_scale` | raw no-image floor | -0.0072 | 0.0764 |
+| `logistic_image_scale` | linear model with image-style scaling | 0.0392 | 0.3850 |
+| `ensemble_4family` | logistic + CNN + LSTM/CNNLSTM baseline | 0.0674 | 0.5430 |
+| `mu_image_factor_rank` | image-factor-enhanced ODE `mu(t)` candidate | 0.0798 | 0.3155 |
+| `mu_image_factor_strict_rank` | strict-window MA robustness candidate | 0.0771 | 0.6053 |
+
+Interpretation:
+
+- The biggest robust lift comes from image-style representation versus the raw no-image baseline.
+- CNN/LSTM models did not simply dominate simpler models; the useful gain came from combining low-correlation model families.
+- The image-factor add-on improved cross-sectional rank quality, but standalone top-k Sharpe was not always higher. That is why the final deliverable is an optimizer input package rather than a standalone trading rule.
+- Ledoit-Wolf shrinkage is recommended for `Sigma(t)` because it reduced the median covariance condition number from 2409 to 64 and removed all dates with condition number above `1e4`.
+
+## Repository Layout
+
+```text
+.
+├── src/                         # data, features, image rendering, models, evaluation
+├── docs/                        # research reports, validation notes, selected figures
+├── outputs/ode_handoff/          # curated GitHub-safe ODE input package
+├── etfdata.csv                  # 7-ETF OHLCV source data
+├── run_walkforward.py           # walk-forward model evaluation entry point
+├── build_image_factor_*.py      # image factor extraction / ablation / robustness
+├── build_final_ode_*.py         # final mu and Sigma handoff builders
+├── build_mu_calibration.py      # expanding rank-to-return-scale mu calibration
+├── build_sigma_*.py             # covariance shrinkage and variant builders
+└── requirements.txt
 ```
-sprint2-etf-cnn/
-├── src/                             모델·데이터·평가 코드
-├── etfdata.csv                      원본 ETF 일별 OHLCV
-├── requirements.txt
-│
-├── run_walkforward.py               walk-forward OOS 실행 entrypoint
-├── make_ode_inputs.py               μ calibration, rolling Σ, ODE 번들 생성
-├── collect_cnn_ode_signals.py       CNN 예측 → 모델별 번들 디렉토리 생성
-├── build_handoff_package.py         README/QA/ensemble 생성 (1-shot)
-├── build_handoff_figures.py         발표용 figure 8종 생성
-├── build_baseline_comparison.py     CNN vs logistic 베이스라인 비교 + ablation
-│
-├── outputs_walkforward_4model/      walk-forward 원본 예측 (CNN 4 + 2 logistic)
-├── outputs_walkforward_mu/          1D CNN μ 실험
-├── outputs_walkforward_1dcnn_extra/ attention/dilated/multiscale/cumulative
-├── outputs_walkforward_2d_residual/ 2D CNN + ResNet
-├── outputs_walkforward_2d_phase2/   Phase 2 rehab — cnn_2d_residual_small/wd
-├── outputs_walkforward_2d_fix/      Phase 1 2D diagnostic (30ep + patience 5)
-├── outputs_walkforward_risk/        risk signal용 walk-forward
-├── lstm/                            LSTM 4종 walk-forward 결과 (팀원 산출물)
-│
-├── build_extended_ensemble.py       14모델 × 1470 조합 ensemble search
-├── build_ensemble_best.py           Phase 3 winner (3-멤버) 번들 빌드
-├── build_ensemble_4family.py        Phase 4 winner (4-멤버, LSTM 포함) 번들 빌드
-├── build_lift_progression_fig.py    3단계 lift figure
-├── bootstrap_significance.py        paired bootstrap CI 검정
-│
-├── ode_inputs_cnn/                  ★ 최종 핸드오프 패키지
-│   ├── README.md
-│   ├── HANDOFF_SUMMARY.md           팀 1페이지 브리핑
-│   ├── qa_report.md / qa_report.json
-│   ├── comparison.csv / comparison.md
-│   ├── comparison_with_baselines.csv
-│   ├── ensemble_search.csv          770→2940 조합 전수 결과
-│   ├── significance_test.md         bootstrap CI 검정 결과
-│   ├── returns_daily.csv / prices_daily.csv
-│   ├── figures/                     발표용 PNG 12종
-│   ├── ensemble_best/               ★ Phase 3 default (Sharpe-prio)
-│   ├── ensemble_4family/            ★ Phase 4 alt (rank corr-prio, LSTM 포함)
-│   ├── ensemble_top3/               레거시 CNN-only 앙상블
-│   └── {model_name}/                12 모델별 mu_daily / ode_bundle / ode_config
-│
-└── blog_cnn_lstm_handoff.md         CNN → LSTM 로드맵 블로그 글
-```
 
-## 빠른 재현
+Large intermediate fold predictions, model checkpoints, source paper PDFs, old presentation exports, and local virtual environments were intentionally removed from the public-facing project structure.
+
+## Main Output Files
+
+| File | Purpose |
+|---|---|
+| `outputs/ode_handoff/02_mu_inputs/selected_mu_input.csv` | recommended rank-scale `mu(t)` candidate |
+| `outputs/ode_handoff/02_mu_inputs/selected_mu_input_calibrated.csv` | same signal with expanding return-scale calibration |
+| `outputs/ode_handoff/02_mu_inputs/final_mu_inputs_wide.csv` | 5 main `mu(t)` candidates in compact wide format |
+| `outputs/ode_handoff/02_mu_inputs/input_performance_summary.csv` | rank correlation, Sharpe, hit rate, turnover summary |
+| `outputs/ode_handoff/03_sigma_returns/sigma_shrunk_wide.csv` | recommended Ledoit-Wolf shrunk covariance input |
+| `outputs/ode_handoff/03_sigma_returns/sigma_wide.csv` | plain 60-day rolling sample covariance for comparison |
+| `outputs/ode_handoff/03_sigma_returns/returns_for_ode.csv` | realized returns for downstream backtests |
+| `docs/reports/process_integrity_report.md` | leakage, bootstrap, and reproducibility audit |
+| `docs/reports/paper_draft_ko.md` | Korean paper-style research draft |
+
+## Quick Start
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 
-# 1. walk-forward 실행 (결과 → outputs_walkforward_*/)
+# Baseline walk-forward model run
 python run_walkforward.py --lookback 60 --horizon 20
 
-# 2. CNN 예측 → ODE 입력 번들
-python collect_cnn_ode_signals.py \
-  --pred-paths outputs_walkforward_4model/walkforward_predictions.csv \
-               outputs_walkforward_1dcnn_extra/walkforward_predictions.csv \
-               outputs_walkforward_2d_residual/walkforward_predictions.csv \
-  --risk-path outputs_walkforward_risk/walkforward_predictions.csv \
-  --output-dir ode_inputs_cnn
+# Image factor ablation
+python build_image_factor_ablation.py
 
-# 3. 핸드오프 패키지 finalize (README/QA/ensemble)
-python build_handoff_package.py
-
-# 4. 발표용 figure
-python build_handoff_figures.py
-
-# 5. 베이스라인 비교 + ablation
-python build_baseline_comparison.py
+# Final ODE input builders
+python build_final_ode_mu_inputs.py
+python build_final_ode_sigma_inputs.py
+python build_mu_calibration.py
+python build_sigma_shrunk.py
+python build_sigma_variants.py
 ```
 
-## 다음 스프린트가 쓰는 방법
+Full deep-learning walk-forward runs are compute-heavy. For review, start with `docs/README.md` and the curated CSVs under `outputs/ode_handoff/`.
 
-```python
-import pandas as pd
-from pathlib import Path
+## How This Connects To ODE
 
-ROOT = Path("ode_inputs_cnn/ensemble_best")  # 권장; ensemble_top3는 레거시 CNN-only
+The downstream ODE optimizer needs three time-indexed inputs:
 
-bundle = pd.read_csv(ROOT / "ode_bundle.csv", parse_dates=["date"])
-returns = pd.read_csv("ode_inputs_cnn/returns_daily.csv", parse_dates=["date"])
+- `mu(t)`: expected-return-style signal by date and asset.
+- `Sigma(t)`: covariance matrix by date.
+- `R(t)`: realized returns for backtest and evaluation.
 
-ASSETS = ["alternative", "corp_bond_ig", "developed_equity", "emerging_equity",
-          "korea_equity", "short_treasury", "treasury_7_10y"]
+This repository provides all three:
 
-mu = bundle[[f"{a}_mu" for a in ASSETS]].values        # (T, 7)
-risk = bundle[[f"{a}_risk" for a in ASSETS]].values    # (T, 7)
-```
+- Use `mu_signal` in `selected_mu_input.csv` for rank-scale ODE experiments.
+- Use `mu_calibrated_daily` in `selected_mu_input_calibrated.csv` when the ODE implementation needs daily return-scale expected returns.
+- Use `sigma_shrunk_wide.csv` as the default covariance input and compare it against `sigma_wide.csv`.
 
-Leakage 보증: μ calibration은 expanding 방식, Σ는 t 시점까지의 60일 window만 사용.
+## Process Integrity
 
-## 핵심 결과
+- Walk-forward training uses chronological splits.
+- Image-feature PCA is fit on train/validation data and only transformed on test data.
+- Rolling PCA controls and covariance estimates use trailing windows only.
+- `future_return` columns are evaluation targets and must not be used as optimizer inputs.
+- Overlapping 20-day targets make IID bootstrap too optimistic, so block-bootstrap caveats are documented.
+- Extra ETF supervised pretraining was a negative result and is kept as robustness evidence, not as a recommended input.
 
-| 지표 | 1위 | 값 | 추천 default |
-|---|---|---|---|
-| Top-k Sharpe (portfolio quality) | ★ `ensemble_best` (3-family) | **0.630** | ✓ Sharpe-prio |
-| OOS rank corr (signal quality) | ★ `ensemble_4family` (4-family, +LSTM) | **0.0633** | ✓ rank-prio |
-| 최고 단일 LSTM | `lstm_image_scale` | rank 0.0506 | — |
-| 최고 단일 CNN | `cnn_2d_residual_small` (Phase 2 rehab) | rank 0.0426 | — |
-
-| Phase | 변화 | rank corr | Sharpe | 비고 |
-|---|---|---|---|---|
-| 1 | CNN-only top-3 ensemble | 0.0375 | 0.275 | logistic_image (0.039) 천장 못 넘음 |
-| 3 | + logistic_image (mixed family) | 0.0606 | **0.630** | 두 metric 동시 1위 |
-| 4 | + cnnlstm_image (4-family hybrid) | **0.0674** | 0.543 | rank +0.007 / Sharpe trade-off (작아짐) |
-
-**Bootstrap CI**: Phase 3 → Phase 4 lift +0.0068 의 95% CI [−0.002, +0.016] → borderline NOT significant. 단 cnnlstm vs logistic ρ = −0.17 (음의 상관) — family 다양화 thesis 의 mechanism 강하게 지지.
-
-→ 다음 단계: ODE 본체 통합 + (선택) 5번째 family — [blog 글](blog_cnn_lstm_handoff.md) 참고.
-
-## 참고
-
-- 논문: An ODE-Based Dynamic Mean-Variance Portfolio Optimisation with Time-Varying Risk Aversion
-- 이미지 변환: Jiang et al. 2016 (60일 OHLCV → 2D 이미지)
+This project is for research and portfolio-engineering demonstration only. It is not investment advice.

@@ -6,6 +6,8 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+*.log
+*.pid
 
 # Virtual envs
 .venv/
@@ -20,12 +22,29 @@ Thumbs.db
 
 # Claude / agent scratch
 .claude/
+.agents/
+.codex/
 agents.md
 claude.md
 
-# Local-only (not part of public repo)
+# Local-only / large generated artifacts
 archive/
 paper/
+data/extra_market/
+experiments/
+handoff_lstm/
+cnnlstm/
+lstm/
+xgb/
+ode_inputs_cnn/
+presentation_figures/
+*.pt
+*.pth
+
+# Presentation/export artifacts kept out of the public repo by default
+*.pptx
+*.pdf
+!docs/**/*.pdf
 
 # Notebooks checkpoints
 .ipynb_checkpoints/
