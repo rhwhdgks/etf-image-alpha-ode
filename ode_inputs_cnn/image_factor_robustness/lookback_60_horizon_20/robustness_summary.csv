@@ -1,2 +1,0 @@
-window_tag,lookback,horizon,chart_variant,n_rows,n_dates,n_folds,best_p_factor,best_p_t_stat,best_p_value,best_p_delta_r2,best_p_daily_rank_corr,best_rank_factor,best_daily_rank_corr,best_rank_p_value,best_rank_delta_r2
-lookback_60_horizon_20,60,20,ohlc_ma_volume,2520,360,6,image_factor_pc3,4.997038256443593,9.113566723506494e-07,0.01733207083616828,0.011210317460317452,image_score,0.12242063492063496,0.07346142594929694,0.0030938342818781495

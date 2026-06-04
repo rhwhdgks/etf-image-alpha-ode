@@ -1,4 +1,0 @@
-input_name,source_model_name,strict_window_ma,rank_corr,top_k_sharpe,top_k_cumulative_return,top_k_hit_rate,rank_corr_diff_vs_base,bootstrap_ci_low,bootstrap_ci_high,input_role
-mu_image_factor_rank,ensemble_4family+image_factor_pc1,False,0.0797760258454154,0.3155021038735279,0.5516933409152442,0.5694444444444444,0.0123946818703526,1.3290229269058142e-05,0.0250495157655169,Recommended ranking-improved input using full OHLC+MA+Volume image factor PC1
-mu_image_factor_strict_rank,ensemble_4family+image_factor_pc1,True,0.0770751829100487,0.6052936080216049,1.4324024160342748,0.5833333333333334,0.0096938389349858,-0.0028972817322878,0.0219502889674376,Conservative robustness input using MA recomputed only within each 60-day image window
-mu_rank_baseline,ensemble_4family,False,0.0673813439750628,0.5429968093752097,1.2395035504810274,0.6041666666666666,0.0,0.0,0.0,Rank-correlation baseline before image-factor ablation add-on

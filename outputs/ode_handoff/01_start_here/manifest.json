@@ -1,0 +1,97 @@
+{
+  "package_name": "curated_ode_handoff",
+  "package_root": "outputs/ode_handoff",
+  "curated_for": "GitHub finance portfolio project",
+  "scope": "selected mu(t), selected Sigma(t), realized returns, and validation reports",
+  "python_version": "3.12.x",
+  "lookback": 60,
+  "horizon": 20,
+  "default_seed": 42,
+  "recommended_input": {
+    "name": "mu_image_factor_rank",
+    "file": "02_mu_inputs/selected_mu_input.csv",
+    "rank_scale_column": "mu_signal",
+    "return_scale_file": "02_mu_inputs/selected_mu_input_calibrated.csv",
+    "return_scale_column": "mu_calibrated_daily"
+  },
+  "recommended_sigma": {
+    "file": "03_sigma_returns/sigma_shrunk_wide.csv",
+    "method": "Ledoit-Wolf shrinkage covariance",
+    "comparison_file": "03_sigma_returns/sigma_wide.csv"
+  },
+  "date_range": {
+    "start": "2014-09-24",
+    "end": "2026-03-09",
+    "n_oos_dates": 2880
+  },
+  "assets": [
+    "alternative",
+    "corp_bond_ig",
+    "developed_equity",
+    "emerging_equity",
+    "korea_equity",
+    "short_treasury",
+    "treasury_7_10y"
+  ],
+  "mu_files": {
+    "selected_mu_input": "02_mu_inputs/selected_mu_input.csv",
+    "selected_mu_input_calibrated": "02_mu_inputs/selected_mu_input_calibrated.csv",
+    "final_mu_inputs_wide": "02_mu_inputs/final_mu_inputs_wide.csv",
+    "extra_mu_candidates_wide": "02_mu_inputs/extra_mu_candidates_wide.csv",
+    "input_performance_summary": "02_mu_inputs/input_performance_summary.csv",
+    "main_vs_strict_mu_comparison": "02_mu_inputs/main_vs_strict_mu_comparison.csv",
+    "mu_calibration_summary": "02_mu_inputs/mu_calibration_summary.csv",
+    "extra_mu_candidates_summary": "02_mu_inputs/extra_mu_candidates_summary.csv"
+  },
+  "sigma_return_files": {
+    "returns_for_ode": "03_sigma_returns/returns_for_ode.csv",
+    "prices_for_ode": "03_sigma_returns/prices_for_ode.csv",
+    "sigma_manifest": "03_sigma_returns/sigma_manifest.json",
+    "sigma_wide": "03_sigma_returns/sigma_wide.csv",
+    "sigma_shrunk_wide": "03_sigma_returns/sigma_shrunk_wide.csv",
+    "sigma_ewma_wide": "03_sigma_returns/sigma_ewma_wide.csv",
+    "sigma_multiwindow_wide": "03_sigma_returns/sigma_multiwindow_wide.csv",
+    "sigma_shrinkage_report": "03_sigma_returns/sigma_shrinkage_report.md",
+    "sigma_variants_report": "03_sigma_returns/sigma_variants_report.md"
+  },
+  "validation_reports": {
+    "process_integrity_report": "04_validation_reports/process_integrity_report.md",
+    "multiple_testing_report": "04_validation_reports/multiple_testing_report.md",
+    "multiple_testing_csv": "04_validation_reports/image_factor_significance_multiple_testing.csv",
+    "multiple_testing_summary": "04_validation_reports/multiple_testing_summary.csv",
+    "subperiod_stability_report": "04_validation_reports/mu_subperiod_stability_report.md",
+    "subperiod_stability_csv": "04_validation_reports/mu_subperiod_stability.csv",
+    "subperiod_rank_corr_pivot": "04_validation_reports/mu_subperiod_rank_corr_pivot.csv",
+    "mu_calibration_report": "04_validation_reports/mu_calibration_report.md",
+    "image_factor_block_bootstrap": "04_validation_reports/image_factor_block_bootstrap.md"
+  },
+  "source_notes": {
+    "image_factor_phase12": "05_source_notes/image_factor_phase12_final_report.md",
+    "strict_window_ma": "05_source_notes/strict_window_ma_result_note.md",
+    "extra_pretraining": "05_source_notes/extra_pretraining_result_note.md"
+  },
+  "performance_snapshot": {
+    "mu_rank_baseline": {
+      "rank_corr": 0.0674,
+      "top_k_sharpe": 0.5430
+    },
+    "mu_image_factor_rank": {
+      "rank_corr": 0.0798,
+      "top_k_sharpe": 0.3155
+    },
+    "mu_image_factor_strict_rank": {
+      "rank_corr": 0.0771,
+      "top_k_sharpe": 0.6053
+    },
+    "mu_sharpe_baseline": {
+      "rank_corr": 0.0606,
+      "top_k_sharpe": 0.6425
+    }
+  },
+  "warnings": [
+    "future_return is an evaluation target, not an optimizer input",
+    "Sigma(t) is a rolling or shrunk historical covariance estimate, not a CNN prediction",
+    "image-factor lift is regime-sensitive",
+    "full fold-level predictions and long-format covariance matrices are excluded from this curated GitHub package"
+  ]
+}

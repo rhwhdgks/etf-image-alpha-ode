@@ -1,0 +1,51 @@
+{
+  "package_scope": "curated GitHub covariance outputs",
+  "sigma_window": 60,
+  "scale": "daily log-return covariance",
+  "date_start": "2014-09-24",
+  "date_end": "2026-03-09",
+  "n_dates": 2880,
+  "n_assets": 7,
+  "assets": [
+    "alternative",
+    "corp_bond_ig",
+    "developed_equity",
+    "emerging_equity",
+    "korea_equity",
+    "short_treasury",
+    "treasury_7_10y"
+  ],
+  "files": {
+    "returns": "returns_for_ode.csv",
+    "prices": "prices_for_ode.csv",
+    "sample_covariance": "sigma_wide.csv",
+    "ledoit_wolf_shrunk_covariance": "sigma_shrunk_wide.csv",
+    "ewma_covariance": "sigma_ewma_wide.csv",
+    "multiwindow_covariance": "sigma_multiwindow_wide.csv",
+    "shrinkage_report": "sigma_shrinkage_report.md",
+    "variants_report": "sigma_variants_report.md"
+  },
+  "recommended_sigma": {
+    "file": "sigma_shrunk_wide.csv",
+    "method": "Ledoit-Wolf shrinkage to scaled-identity target, per 60-day window",
+    "reason": "More stable covariance inverse for ODE portfolio weights"
+  },
+  "condition_number_summary": {
+    "sample_covariance": {
+      "median": 2409,
+      "p95": 10644,
+      "max": 18444,
+      "dates_over_1e4": 176
+    },
+    "ledoit_wolf_shrunk": {
+      "median": 64,
+      "p95": 142,
+      "max": 206,
+      "dates_over_1e4": 0
+    }
+  },
+  "excluded_from_curated_package": [
+    "long-format 7x7 covariance matrices",
+    "full internal source bundles"
+  ]
+}

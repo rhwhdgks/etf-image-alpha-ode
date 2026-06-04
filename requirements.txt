@@ -1,16 +1,10 @@
-# Python 3.12.3 — pinned for reproducibility of the ODE handoff artifacts.
-# See ode_inputs_cnn/ode_team_handoff_20260519/REPRODUCIBILITY.md for the
-# end-to-end build chain.
+# Python 3.12.x recommended.
+# Core research stack for ETF image-factor signal generation and ODE handoff.
 numpy==2.4.4
 pandas==3.0.2
 scipy==1.17.1
 scikit-learn==1.8.0
 torch==2.11.0
-xgboost==3.2.0
 matplotlib==3.10.8
 seaborn==0.13.2
 pillow==12.2.0
-# presentation tooling (optional, used only by build_presentation.py)
-python-pptx==1.0.2
-lxml==6.1.0
-xlsxwriter==3.2.9
