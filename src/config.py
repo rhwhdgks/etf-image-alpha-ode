@@ -35,6 +35,7 @@ class PipelineConfig:
     wf_min_train_days: int = 500
     wf_val_days: int = 60
     wf_test_days: int = 60
+    wf_embargo_days: int = 0
 
     @property
     def resolved_ma_window(self) -> int:

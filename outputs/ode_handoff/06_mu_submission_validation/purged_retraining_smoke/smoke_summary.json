@@ -1,0 +1,11 @@
+{
+  "status": "PASS",
+  "purpose": "purged retraining smoke test for build_image_factor_panel",
+  "output_dir": "outputs/ode_handoff/06_mu_submission_validation/purged_retraining_smoke",
+  "rows": 420,
+  "dates": 60,
+  "folds": 1,
+  "wf_embargo_days": 20,
+  "cnn_epochs": 1,
+  "history_file_exists": true
+}

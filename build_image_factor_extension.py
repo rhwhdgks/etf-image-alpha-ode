@@ -117,6 +117,7 @@ def build_image_factor_panel(
     features = bundle.chart_images[:, None, :, :].astype(np.float32) / 255.0
     target = metadata["target"].to_numpy(dtype=np.float32)
     rows = []
+    history_rows = []
 
     print(
         f"Image factor extraction: samples={prep['n_samples']} image_shape={features.shape[1:]} folds={len(folds)}",
@@ -154,6 +155,22 @@ def build_image_factor_panel(
             patience=config.patience,
             device=config.device,
         )
+        for hist in getattr(model, "training_history_", []):
+            history_rows.append(
+                {
+                    "fold": fold_idx,
+                    "model_name": config.enabled_models[0],
+                    "epoch": hist["epoch"],
+                    "train_loss": hist["train_loss"],
+                    "val_loss": hist["val_loss"],
+                    "best_val_loss": hist["best_val_loss"],
+                    "stale_epochs": hist["stale_epochs"],
+                    "best_epoch": getattr(model, "best_epoch_", None),
+                    "test_start": test_dates.min().strftime("%Y-%m-%d"),
+                    "test_end": test_dates.max().strftime("%Y-%m-%d"),
+                    "wf_embargo_days": config.wf_embargo_days,
+                }
+            )
 
         test_scores, _ = predict_torch_model(model, features[test_mask], config.label_mode, config.batch_size)
         train_val_fc = extract_torch_features(model, features[train_val_mask], config.batch_size)
@@ -183,6 +200,10 @@ def build_image_factor_panel(
         raise ValueError("image_factor_panel has duplicate date-asset rows")
     if panel[FACTOR_COLUMNS].isna().any().any():
         raise ValueError("image_factor_panel contains NaN factor values")
+    if history_rows:
+        history_path = Path(config.output_dir) / "cnn_training_history.csv"
+        history_path.parent.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame(history_rows).to_csv(history_path, index=False)
     return panel
 
 
@@ -545,6 +566,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--wf-min-train-days", type=int, default=500)
     p.add_argument("--wf-val-days", type=int, default=60)
     p.add_argument("--wf-test-days", type=int, default=60)
+    p.add_argument("--wf-embargo-days", type=int, default=0)
     p.add_argument("--cnn-epochs", type=int, default=30)
     p.add_argument("--patience", type=int, default=5)
     p.add_argument("--weight-decay", type=float, default=5e-4)
@@ -580,6 +602,7 @@ def main() -> None:
         wf_min_train_days=args.wf_min_train_days,
         wf_val_days=args.wf_val_days,
         wf_test_days=args.wf_test_days,
+        wf_embargo_days=args.wf_embargo_days,
         cnn_epochs=args.cnn_epochs,
         patience=args.patience,
         weight_decay=args.weight_decay,

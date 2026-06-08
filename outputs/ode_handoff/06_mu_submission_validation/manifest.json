@@ -1,0 +1,59 @@
+{
+  "workspace": "outputs/ode_handoff/06_mu_submission_validation",
+  "source_final_wide": "outputs/ode_handoff/02_mu_inputs/final_mu_inputs_wide.csv",
+  "source_selected_calibrated": "outputs/ode_handoff/02_mu_inputs/selected_mu_input_calibrated.csv",
+  "horizon": 20,
+  "fold_test_days": 60,
+  "purge_rule": "drop first 20 dates of each 60-date OOS fold",
+  "top_k": 2,
+  "bootstrap_samples": 5000,
+  "bootstrap_block_length": 20,
+  "seed": 42,
+  "candidate_count": 5,
+  "locked_comparisons": [
+    [
+      "image_factor_rank_vs_rank_baseline",
+      "mu_rank_baseline",
+      "mu_image_factor_rank"
+    ],
+    [
+      "strict_rank_vs_rank_baseline",
+      "mu_rank_baseline",
+      "mu_image_factor_strict_rank"
+    ],
+    [
+      "balanced_vs_sharpe_baseline",
+      "mu_sharpe_baseline",
+      "mu_image_factor_balanced"
+    ]
+  ],
+  "purged_retraining_command": [
+    "python",
+    "build_image_factor_extension.py",
+    "--output-dir",
+    "outputs/ode_handoff/06_mu_submission_validation/purged_retraining_candidate",
+    "--lookback",
+    "60",
+    "--horizon",
+    "20",
+    "--wf-embargo-days",
+    "20",
+    "--cnn-epochs",
+    "30",
+    "--patience",
+    "5",
+    "--weight-decay",
+    "5e-4"
+  ],
+  "purged_retraining_smoke": {
+    "status": "PASS",
+    "purpose": "purged retraining smoke test for build_image_factor_panel",
+    "output_dir": "outputs/ode_handoff/06_mu_submission_validation/purged_retraining_smoke",
+    "rows": 420,
+    "dates": 60,
+    "folds": 1,
+    "wf_embargo_days": 20,
+    "cnn_epochs": 1,
+    "history_file_exists": true
+  }
+}

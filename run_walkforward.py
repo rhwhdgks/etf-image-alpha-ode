@@ -43,6 +43,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--wf-min-train-days", type=int, default=500)
     p.add_argument("--wf-val-days", type=int, default=60)
     p.add_argument("--wf-test-days", type=int, default=60)
+    p.add_argument("--wf-embargo-days", type=int, default=0, help="drop the last N validation dates before each test fold")
     p.add_argument("--cnn-epochs", type=int, default=8)
     p.add_argument("--cnn-repeats", type=int, default=1)
     p.add_argument("--patience", type=int, default=2, help="early-stopping patience (epochs without val improvement)")
@@ -67,6 +68,7 @@ def main() -> None:
         wf_min_train_days=args.wf_min_train_days,
         wf_val_days=args.wf_val_days,
         wf_test_days=args.wf_test_days,
+        wf_embargo_days=args.wf_embargo_days,
         cnn_epochs=args.cnn_epochs,
         cnn_repeats=args.cnn_repeats,
         patience=args.patience,
@@ -102,7 +104,11 @@ def main() -> None:
     bundle, prep = build_samples(common_panel, config)
     print(f"  total samples: {prep['n_samples']}  shape: {prep['sequence_shape']}")
 
-    print(f"\nRunning walk-forward OOS  (min_train={config.wf_min_train_days}, val={config.wf_val_days}, test={config.wf_test_days}) ...")
+    print(
+        f"\nRunning walk-forward OOS  "
+        f"(min_train={config.wf_min_train_days}, val={config.wf_val_days}, "
+        f"test={config.wf_test_days}, embargo={config.wf_embargo_days}) ..."
+    )
     oos_df, comparison_df = run_walkforward(bundle, config)
 
     oos_export = oos_df.copy()
@@ -116,7 +122,7 @@ def main() -> None:
         "## Configuration",
         f"- lookback={config.lookback}, horizon={config.horizon}",
         f"- label_mode={config.label_mode}, target={config.target_name}",
-        f"- wf_min_train_days={config.wf_min_train_days}  wf_val_days={config.wf_val_days}  wf_test_days={config.wf_test_days}",
+        f"- wf_min_train_days={config.wf_min_train_days}  wf_val_days={config.wf_val_days}  wf_test_days={config.wf_test_days}  wf_embargo_days={config.wf_embargo_days}",
         f"- models: {', '.join(enabled_models)}",
         f"- total OOS predictions: {len(oos_df)}",
         "",

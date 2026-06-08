@@ -1,0 +1,2 @@
+fold,model_name,epoch,train_loss,val_loss,best_val_loss,stale_epochs,best_epoch,test_start,test_end,wf_embargo_days
+0,cnn_2d_residual_small,1,0.0010992233345115726,0.0005695079977158457,0.0005695079977158457,0,1,2014-09-24,2014-12-17,20
