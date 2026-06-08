@@ -53,7 +53,9 @@ Important interpretation:
 | `03_sigma_returns/sigma_multiwindow_wide.csv` | multi-window covariance variant |
 | `03_sigma_returns/returns_for_ode.csv` | realized ETF returns |
 | `04_validation_reports/` | validation and robustness reports |
+| `04_validation_reports/mu_input_validation_audit_ko.md` | Korean audit for `mu(t)` leakage, overfit/underfit, calibration, and remaining paper risks |
 | `05_source_notes/` | source notes for image factor and negative pretraining result |
+| `06_mu_submission_validation/` | locked-candidate and fold-boundary purged validation workspace |
 
 Full long-format CSVs, model checkpoints, fold-level predictions, and paper PDFs are excluded from the GitHub version.
 
@@ -81,6 +83,8 @@ returns = pd.read_csv(root / "03_sigma_returns/returns_for_ode.csv", parse_dates
 - Signal dates are walk-forward out-of-sample dates.
 - Rolling PCA controls and covariance estimates use trailing windows only.
 - The 20-day prediction horizon creates overlapping labels, so block-bootstrap caveats should be used for significance claims.
+- `06_mu_submission_validation/` drops the first 20 OOS dates of every 60-day test fold as a boundary-purge sensitivity check. The image-factor rank signal remains directionally positive, but block-bootstrap CIs still include zero.
+- The code now supports purged retraining via `--wf-embargo-days 20`; a 1-fold/1-epoch smoke test passed under `06_mu_submission_validation/purged_retraining_smoke/`.
 - Extra ETF supervised pretraining was tested and excluded because it underperformed the clean 7-ETF setup.
 
 ## ODE Integration Checklist

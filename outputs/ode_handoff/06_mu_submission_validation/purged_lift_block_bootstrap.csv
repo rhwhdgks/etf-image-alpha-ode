@@ -1,0 +1,7 @@
+sample,comparison,base,candidate,rank_corr_lift,block_ci_low,block_ci_high,n_aligned_dates,block_length,bootstrap_samples
+full_oos,image_factor_rank_vs_rank_baseline,mu_rank_baseline,mu_image_factor_rank,0.01239468187035266,-0.02583150134853206,0.05115118399491881,2880,20,5000
+full_oos,strict_rank_vs_rank_baseline,mu_rank_baseline,mu_image_factor_strict_rank,0.009693838934985887,-0.02699354766061793,0.044764792363141216,2880,20,5000
+full_oos,balanced_vs_sharpe_baseline,mu_sharpe_baseline,mu_image_factor_balanced,0.01253517236856002,-0.024469078990792707,0.05046686146543815,2880,20,5000
+purged_boundary_oos,image_factor_rank_vs_rank_baseline,mu_rank_baseline,mu_image_factor_rank,0.004664770139623284,-0.0380112417120638,0.04833665535015264,1920,20,5000
+purged_boundary_oos,strict_rank_vs_rank_baseline,mu_rank_baseline,mu_image_factor_strict_rank,-0.002829641688700411,-0.0437876280179594,0.0390772006671732,1920,20,5000
+purged_boundary_oos,balanced_vs_sharpe_baseline,mu_sharpe_baseline,mu_image_factor_balanced,0.0015308856347137762,-0.042257028726425706,0.0443678505337427,1920,20,5000

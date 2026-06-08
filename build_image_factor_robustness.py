@@ -72,6 +72,7 @@ def _config(args: argparse.Namespace, lookback: int, horizon: int, out_dir: Path
         wf_min_train_days=args.wf_min_train_days,
         wf_val_days=args.wf_val_days,
         wf_test_days=args.wf_test_days,
+        wf_embargo_days=args.wf_embargo_days,
         cnn_epochs=args.cnn_epochs,
         patience=args.patience,
         weight_decay=args.weight_decay,
@@ -190,6 +191,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--wf-min-train-days", type=int, default=500)
     p.add_argument("--wf-val-days", type=int, default=60)
     p.add_argument("--wf-test-days", type=int, default=60)
+    p.add_argument("--wf-embargo-days", type=int, default=0)
     p.add_argument("--cnn-epochs", type=int, default=5)
     p.add_argument("--patience", type=int, default=2)
     p.add_argument("--weight-decay", type=float, default=5e-4)

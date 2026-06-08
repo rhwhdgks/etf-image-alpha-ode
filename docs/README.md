@@ -7,7 +7,7 @@ This folder contains the research notes, validation reports, and figures that su
 1. Start with `reports/paper_draft_ko.md` for the full Korean research narrative.
 2. Read `reports/process_integrity_report.md` to check leakage, bootstrap, and reproducibility limitations.
 3. Read `reports/image_factor_phase12_final_report.md` for the Jiang-style image-factor extension and 6-way chart ablation.
-4. Read `reports/mu_calibration_report.md` and the ODE handoff README under `../outputs/ode_handoff/` to understand how signals become optimizer inputs.
+4. Read `reports/mu_input_validation_audit_ko.md`, `reports/mu_calibration_report.md`, and `../outputs/ode_handoff/06_mu_submission_validation/mu_submission_validation_report.md` to understand whether the prepared `mu(t)` inputs are defensible for ODE use.
 5. Use the figures in `figures/` for presentation or interview explanation.
 
 ## Core Reports
@@ -18,6 +18,7 @@ This folder contains the research notes, validation reports, and figures that su
 | `reports/cnn_lstm_research_story.md` | project story from CNN/LSTM modeling to ensemble construction |
 | `reports/reproducibility.md` | reproducibility and build-chain notes |
 | `reports/process_integrity_report.md` | leakage, bootstrap, and process audit |
+| `reports/mu_input_validation_audit_ko.md` | ODE용 `mu(t)` 입력의 overfit/underfit/leakage 감사 |
 | `reports/image_factor_phase12_final_report.md` | image-factor extraction and chart-component ablation |
 | `reports/multiple_testing_report.md` | multiple-testing correction summary |
 | `reports/image_factor_block_bootstrap.md` | autocorrelation-aware bootstrap note |
@@ -25,6 +26,12 @@ This folder contains the research notes, validation reports, and figures that su
 | `reports/mu_calibration_report.md` | rank-to-return-scale `mu(t)` calibration |
 | `reports/extra_pretraining_result_note.md` | negative result from 30-ETF supervised pretraining |
 | `reports/strict_window_ma_result_note.md` | strict-window moving-average robustness check |
+
+## ODE Handoff Validation Workspace
+
+| Folder | Purpose |
+|---|---|
+| `../outputs/ode_handoff/06_mu_submission_validation/` | locked-candidate metrics, fold-boundary purged sensitivity, block-bootstrap lift, calibration sanity, purged retraining smoke |
 
 ## Figures
 

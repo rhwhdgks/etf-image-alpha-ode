@@ -56,6 +56,7 @@
   },
   "validation_reports": {
     "process_integrity_report": "04_validation_reports/process_integrity_report.md",
+    "mu_input_validation_audit_ko": "04_validation_reports/mu_input_validation_audit_ko.md",
     "multiple_testing_report": "04_validation_reports/multiple_testing_report.md",
     "multiple_testing_csv": "04_validation_reports/image_factor_significance_multiple_testing.csv",
     "multiple_testing_summary": "04_validation_reports/multiple_testing_summary.csv",
@@ -64,6 +65,16 @@
     "subperiod_rank_corr_pivot": "04_validation_reports/mu_subperiod_rank_corr_pivot.csv",
     "mu_calibration_report": "04_validation_reports/mu_calibration_report.md",
     "image_factor_block_bootstrap": "04_validation_reports/image_factor_block_bootstrap.md"
+  },
+  "submission_validation_workspace": {
+    "folder": "06_mu_submission_validation",
+    "report": "06_mu_submission_validation/mu_submission_validation_report.md",
+    "candidate_locked_metrics": "06_mu_submission_validation/candidate_locked_metrics.csv",
+    "purged_lift_block_bootstrap": "06_mu_submission_validation/purged_lift_block_bootstrap.csv",
+    "calibration_sanity_metrics": "06_mu_submission_validation/calibration_sanity_metrics.csv",
+    "fold_boundary_audit": "06_mu_submission_validation/fold_boundary_audit.csv",
+    "purged_retraining_smoke": "06_mu_submission_validation/purged_retraining_smoke/smoke_summary.json",
+    "purpose": "locked-candidate evaluation and fold-boundary purged sensitivity for paper-submission risk control"
   },
   "source_notes": {
     "image_factor_phase12": "05_source_notes/image_factor_phase12_final_report.md",

@@ -274,10 +274,13 @@ def fit_torch_model(
 
     best_state = copy.deepcopy(model.state_dict())
     best_val_loss = float("inf")
+    best_epoch = -1
     stale_epochs = 0
+    training_history = []
 
-    for _ in range(epochs):
+    for epoch_idx in range(epochs):
         model.train()
+        train_losses = []
         for batch_x, batch_y in train_loader:
             batch_x = batch_x.to(device)
             batch_y = batch_y.to(device)
@@ -286,6 +289,7 @@ def fit_torch_model(
             loss = criterion(predictions, batch_y)
             loss.backward()
             optimizer.step()
+            train_losses.append(float(loss.item()))
 
         model.eval()
         losses = []
@@ -297,16 +301,30 @@ def fit_torch_model(
                 losses.append(float(criterion(predictions, batch_y).item()))
 
         val_loss = float(np.mean(losses)) if losses else float("inf")
+        train_loss = float(np.mean(train_losses)) if train_losses else float("inf")
         if val_loss + 1e-8 < best_val_loss:
             best_val_loss = val_loss
             best_state = copy.deepcopy(model.state_dict())
+            best_epoch = epoch_idx
             stale_epochs = 0
         else:
             stale_epochs += 1
-            if stale_epochs >= patience:
-                break
+        training_history.append(
+            {
+                "epoch": epoch_idx + 1,
+                "train_loss": train_loss,
+                "val_loss": val_loss,
+                "best_val_loss": best_val_loss,
+                "stale_epochs": stale_epochs,
+            }
+        )
+        if stale_epochs >= patience:
+            break
 
     model.load_state_dict(best_state)
+    model.training_history_ = training_history
+    model.best_epoch_ = best_epoch + 1 if best_epoch >= 0 else None
+    model.best_val_loss_ = best_val_loss
     return model.cpu()
 
 

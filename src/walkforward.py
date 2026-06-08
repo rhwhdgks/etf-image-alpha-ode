@@ -15,28 +15,50 @@ def generate_walkforward_folds(dates: list, config: PipelineConfig) -> list[dict
 
     Each fold: train on all history up to train_end, validate on next wf_val_days,
     test on following wf_test_days. Train window expands by wf_test_days each step.
+    If wf_embargo_days > 0, the last wf_embargo_days validation dates before
+    the test block are dropped from model fitting. This supports purged
+    walk-forward checks for overlapping forward-return labels.
     """
     n = len(dates)
     min_train = config.wf_min_train_days
     val_days = config.wf_val_days
     test_days = config.wf_test_days
+    embargo_days = max(0, int(config.wf_embargo_days))
+    if embargo_days >= val_days:
+        raise ValueError("wf_embargo_days must be smaller than wf_val_days so validation is non-empty")
 
     folds = []
     train_end = min_train
     while train_end + val_days + test_days <= n:
         val_end = train_end + val_days
         test_end = val_end + test_days
+        purged_val_end = val_end - embargo_days
+        max_fit_index = max(train_end - 1, purged_val_end - 1)
         folds.append(
             {
                 "train_dates": set(dates[:train_end]),
-                "val_dates": set(dates[train_end:val_end]),
+                "val_dates": set(dates[train_end:purged_val_end]),
+                "embargo_dates": set(dates[purged_val_end:val_end]),
                 "test_dates": set(dates[val_end:test_end]),
                 "train_end_date": dates[train_end - 1],
+                "val_end_date": dates[purged_val_end - 1],
+                "test_start_date": dates[val_end],
                 "test_end_date": dates[test_end - 1],
+                "train_end_index": train_end - 1,
+                "val_end_index": purged_val_end - 1,
+                "test_start_index": val_end,
+                "test_end_index": test_end - 1,
+                "max_fit_index": max_fit_index,
+                "embargo_days": embargo_days,
             }
         )
         train_end += test_days
     return folds
+
+
+def fold_has_horizon_embargo(fold: dict, horizon: int) -> bool:
+    """Return True when fitted labels cannot overlap the fold's test block."""
+    return int(fold["max_fit_index"]) + int(horizon) < int(fold["test_start_index"])
 
 
 def _build_feature_sets(bundle: SampleBundle, n: int, enabled_models: list[str] | None) -> dict[str, np.ndarray]:
@@ -118,7 +140,10 @@ def run_walkforward(bundle: SampleBundle, config: PipelineConfig) -> tuple[pd.Da
             f"not enough dates for walk-forward: need at least {total_needed}, got {len(unique_dates)}"
         )
 
-    print(f"Walk-forward: {len(folds)} folds over {len(unique_dates)} total dates")
+    print(
+        f"Walk-forward: {len(folds)} folds over {len(unique_dates)} total dates "
+        f"(embargo={config.wf_embargo_days})"
+    )
 
     n = len(metadata)
     feature_sets = _build_feature_sets(bundle, n, config.enabled_models or None)
@@ -131,10 +156,13 @@ def run_walkforward(bundle: SampleBundle, config: PipelineConfig) -> tuple[pd.Da
 
         if train_mask.sum() == 0 or val_mask.sum() == 0 or test_mask.sum() == 0:
             continue
+        if config.wf_embargo_days >= config.horizon and not fold_has_horizon_embargo(fold, config.horizon):
+            raise AssertionError("purged walk-forward violation: fitted labels can overlap test block")
 
         print(
             f"  fold {fold_idx + 1:2d}/{len(folds)}: "
             f"train={train_mask.sum():5d}  val={val_mask.sum():4d}  test={test_mask.sum():4d}  "
+            f"test_start={fold['test_start_date'].strftime('%Y-%m-%d')}  "
             f"test_end={fold['test_end_date'].strftime('%Y-%m-%d')}"
         )
 
