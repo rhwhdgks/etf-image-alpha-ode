@@ -1,8 +1,8 @@
 # 이미지 기반 ETF 알파 시그널과 ODE 포트폴리오 입력 패키지
 
-ETF 가격 차트를 이미지로 변환해 cross-sectional 알파 시그널을 만들고, 이를 ODE 기반 동적 포트폴리오 최적화에 필요한 `mu(t)`와 `Sigma(t)` 입력으로 정리한 금융 리서치/엔지니어링 프로젝트입니다.
+7개 ETF의 OHLCV 차트를 이미지로 변환해 20거래일 후 자산 간 수익률 순위 신호 후보를 만들고, 이를 ODE 기반 동적 포트폴리오 최적화에 필요한 `mu(t)`와 `Sigma(t)` 입력으로 정리한 금융 리서치 프로젝트입니다.
 
-이 레포는 LP/MM 직무와 인접한 리서치 역량을 보여주기 위한 포트폴리오 프로젝트입니다. 실제 market-making execution engine은 아니며, 호가 제출, 체결 시뮬레이터, 거래소 라우팅, inventory controller는 포함하지 않습니다. 대신 그 이전 단계인 alpha signal 생성, risk input 구성, 데이터 누수 점검, 재현성 관리에 집중했습니다.
+연구 범위는 alpha signal 후보 생성, risk input 구성, 데이터 누수 점검, 재현성 관리입니다. 주문 실행, 호가 제출, 체결 시뮬레이션은 포함하지 않습니다.
 
 ## 프로젝트 목적
 
@@ -60,6 +60,8 @@ ETF OHLCV data
 | `ensemble_4family` | logistic + CNN + LSTM/CNNLSTM baseline | 0.0674 | 0.5430 |
 | `mu_image_factor_rank` | image factor를 추가한 ODE용 `mu(t)` 후보 | 0.0798 | 0.3155 |
 | `mu_image_factor_strict_rank` | MA 계산을 더 보수적으로 제한한 robustness 후보 | 0.0771 | 0.6053 |
+
+`rank-scale`의 `mu(t)`는 ETF 간 상대 순위 신호이며, 수익률 단위의 기대수익 추정치는 별도 보정이 필요합니다. 표의 Top-k Sharpe는 연구 평가 지표로, 거래비용을 반영한 실거래 성과가 아닙니다.
 
 해석은 다음과 같습니다.
 
