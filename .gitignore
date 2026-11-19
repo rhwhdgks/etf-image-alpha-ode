@@ -20,13 +20,6 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Claude / agent scratch
-.claude/
-.agents/
-.codex/
-agents.md
-claude.md
-
 # Local-only / large generated artifacts
 archive/
 paper/
